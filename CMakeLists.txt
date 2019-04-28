@@ -3,19 +3,30 @@ project(GraPaSim)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(GraPaSim src/main.cpp src/Simulation.cpp src/Simulation.h src/Particles/Particle.h src/Constants.h src/Integration/Integrator.h src/Integration/Leapfrog.cpp src/Integration/Leapfrog.h src/Particles/ParticleContainer.h src/Particles/LinkedCells.cpp src/Particles/LinkedCells.h src/Forces/Forces.h src/Forces/VelocityFieldOnly.cpp src/Forces/VelocityFieldOnly.h src/Output/OutputWriter.h src/Output/XYZWriter.h src/Output/XYZWriter.cpp src/Output/VTKWriter.cpp src/Output/VTKWriter.h)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+# let ccmake and cmake-gui offer the default build type options
+set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug;Release;RelWithDebInfo;MinSizeRel")
 
-find_package(OpenMP)
-if (OPENMP_FOUND)
-    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-endif()
+# set Release as the default build type if it is not yet set.
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+            "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
+endif(NOT CMAKE_BUILD_TYPE)
 
-include(FindXercesC)
-find_package(XercesC REQUIRED)
-include_directories( ${XercesC_INCLUDE_DIR} )
+# modules
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules/)
 
+# include vectorization module
+#include(vectorization)
+# include OpenMP module
+include(OpenMP)
+# include options module
+#include(options)
+# include mpi module
+#include(mpi)
+# include vtk module
+include(vtk)
 
-target_link_libraries ( ${PROJECT_NAME} ${XercesC_LIBRARY} )
+# add mardyn
+ADD_SUBDIRECTORY(src)
