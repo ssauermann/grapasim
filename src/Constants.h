@@ -2,11 +2,6 @@
 
 #include <array>
 
-#ifdef __JETBRAINS_IDE__
-// Stuff that only clion will see goes here
-#define ENABLE_VTK
-#endif
-
 //TODO ifdef etc.
 #define DIMENSIONS 2
 

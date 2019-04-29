@@ -4,12 +4,16 @@
 #include "OutputWriter.h"
 
 class VTKFile_t;
+struct VTKFile_tDeleter
+{
+    void operator()(VTKFile_t *p);
+};
 
 class VTKWriter : public OutputWriter {
 
-    std::unique_ptr<VTKFile_t> vtkFile;
+    std::unique_ptr<VTKFile_t, VTKFile_tDeleter> vtkFile;
 
-    std::unique_ptr<VTKFile_t> parallelVTKFile;
+    std::unique_ptr<VTKFile_t, VTKFile_tDeleter> parallelVTKFile;
 
     unsigned int rank;
 

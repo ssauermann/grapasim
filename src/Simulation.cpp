@@ -1,5 +1,6 @@
 #include <vector>
 #include <iostream>
+#include <Output/VTKWriter.h>
 #include "Simulation.h"
 #include "Integration/Leapfrog.h"
 #include "Particles/Particle.h"
@@ -21,7 +22,7 @@ void Simulation::run() {
     particles.push_back(p);
 
     std::string filename = "sim";
-    auto output = XYZWriter(particles, filename);
+    auto output = VTKWriter(particles, filename, 0);
     auto particleContainer = LinkedCells(particles);
 
     auto preStep = std::bind(&Integrator::doStepPreForce, integrator, std::placeholders::_1);
@@ -57,7 +58,7 @@ void Simulation::run() {
 
         // particleContainer.iterate(print);
 
-        output.write(0);
+        output.write(step);
 
     }
 
