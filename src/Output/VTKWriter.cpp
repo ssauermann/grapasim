@@ -1,6 +1,6 @@
 #include <fstream>
 #include "VTKWriter.h"
-#include <assert.h>
+#include <cassert>
 
 
 #include "VTK/vtk-unstructured.h"

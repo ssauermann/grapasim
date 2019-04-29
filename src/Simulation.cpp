@@ -1,6 +1,7 @@
 #include <vector>
 #include <iostream>
 #include <Output/VTKWriter.h>
+#include <Generators/SphereGenerator.h>
 #include "Simulation.h"
 #include "Integration/Leapfrog.h"
 #include "Particles/Particle.h"
@@ -11,15 +12,17 @@
 
 void Simulation::run() {
 
-    unsigned int simSteps = 100;
+    unsigned int simSteps = 200;
     PRECISION stepSize = 0.01;
     auto integrator = Leapfrog(stepSize);
     auto force = VelocityFieldOnly();
 
+    auto generator = SphereGenerator(20);
+    generator.center[1] = 30;
+
     std::vector<Particle> particles;
 
-    auto p = Particle({5,0},{0,0},1,1);
-    particles.push_back(p);
+    generator.generate(particles);
 
     std::string filename = "sim";
     auto output = VTKWriter(particles, filename, 0);
