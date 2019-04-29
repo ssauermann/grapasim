@@ -1,30 +1,30 @@
 #pragma once
 
-
+#include <memory>
 #include "OutputWriter.h"
-#include "VTK/vtk-unstructured.h"
-#include "VTK/vtk-punstructured.h"
+
+class VTKFile_t;
 
 class VTKWriter : public OutputWriter {
 
-    VTKFile_t &_vtkFile;
+    std::unique_ptr<VTKFile_t> vtkFile;
 
-    VTKFile_t &_parallelVTKFile;
+    std::unique_ptr<VTKFile_t> parallelVTKFile;
 
-    int _rank;
+    unsigned int rank;
 
 
 public:
-    VTKWriter(const std::vector<Particle> &particles, const std::string &filename) : OutputWriter(particles,
-                                                                                                  filename) {}
+    VTKWriter(const std::vector<Particle> &particles, const std::string &filename, const unsigned int rank)
+            : OutputWriter(particles, filename), rank(rank) {}
 
     void write(unsigned long iteration) override;
 
-    void plotParticle(Particle& particle);
+    void plotParticle(const Particle &particle);
 
     void initializeVTKFile();
 
 
-    void initializeParallelVTKFile(const std::vector<std::string>& fileNames);
+    void initializeParallelVTKFile(const std::vector<std::string> &fileNames);
 
 };

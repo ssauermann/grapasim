@@ -26,6 +26,7 @@ include(OpenMP)
 # include mpi module
 #include(mpi)
 # include vtk module
+include_directories(SYSTEM lib/libxsd)
 include(vtk)
 
 # add mardyn
