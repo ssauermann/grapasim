@@ -1,5 +1,6 @@
 #include <vector>
 #include <iostream>
+#include <cmath>
 #include <Output/VTKWriter.h>
 #include <Generators/SphereGenerator.h>
 #include "Simulation.h"
@@ -13,12 +14,13 @@
 void Simulation::run() {
 
     unsigned int simSteps = 200;
-    PRECISION stepSize = 0.01;
+    PRECISION stepSize = 0.005;
     auto integrator = Leapfrog(stepSize);
     auto force = VelocityFieldOnly();
 
-    auto generator = SphereGenerator(20);
-    generator.center[1] = 30;
+    auto generator = SphereGenerator(100);
+    generator.mesh = 0.1;
+    generator.center[1] = 5;
 
     std::vector<Particle> particles;
 
@@ -34,12 +36,12 @@ void Simulation::run() {
 
     auto print = [](Particle &p) {
         std::string velocity = "[";
-        std::string position= "[";
+        std::string position = "[";
 
         for (int i = 0; i < DIMENSIONS; ++i) {
             velocity += std::to_string(p.v[i]);
             position += std::to_string(p.x[i]);
-            if(i < DIMENSIONS - 1){
+            if (i < DIMENSIONS - 1) {
                 velocity += ", ";
                 position += ", ";
             }
@@ -49,7 +51,6 @@ void Simulation::run() {
 
         std::cout << "Particle(" << position << " - " << velocity << ")" << std::endl;
     };
-
 
     for (unsigned int step = 0; step < simSteps; ++step) {
 
@@ -61,7 +62,24 @@ void Simulation::run() {
 
         // particleContainer.iterate(print);
 
-        output.write(step);
+
+        // TODO Remove when boundaries are implemented
+        for (auto it = particles.begin(); it < particles.end();) {
+            if (std::isnan(it->x[0]) || std::isnan(it->x[1]) ||
+                std::isnan(it->F[0]) || std::isnan(it->F[1]) ||
+                std::isnan(it->v[0]) || std::isnan(it->v[1]) ||
+                std::abs(it->x[0]) > 10000 || std::abs(it->x[1]) > 10000 ||
+                std::abs(it->F[0]) > 10000 || std::abs(it->F[1]) > 10000 ||
+                std::abs(it->v[0]) > 10000 || std::abs(it->v[1]) > 10000) {
+                particles.erase(it);
+            } else {
+                ++it;
+            }
+        }
+
+
+        if (step % 1 == 0)
+            output.write(step);
 
     }
 
