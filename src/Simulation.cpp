@@ -30,9 +30,9 @@ void Simulation::run() {
     auto output = VTKWriter(particles, filename, 0);
     auto particleContainer = LinkedCells(particles);
 
-    auto preStep = std::bind(&Integrator::doStepPreForce, integrator, std::placeholders::_1);
-    auto postStep = std::bind(&Integrator::doStepPostForce, integrator, std::placeholders::_1);
-    auto forces = std::bind(&Forces::calculate, force, std::placeholders::_1);
+    auto preStep = std::bind(&Integrator::doStepPreForce, std::ref(integrator), std::placeholders::_1);
+    auto postStep = std::bind(&Integrator::doStepPostForce, std::ref(integrator), std::placeholders::_1);
+    auto forces = std::bind(&Forces::calculate, std::ref(force), std::placeholders::_1);
 
     auto print = [](Particle &p) {
         std::string velocity = "[";
@@ -72,6 +72,7 @@ void Simulation::run() {
                 std::abs(it->F[0]) > 10000 || std::abs(it->F[1]) > 10000 ||
                 std::abs(it->v[0]) > 10000 || std::abs(it->v[1]) > 10000) {
                 particles.erase(it);
+                std::cout << "Deleted particle: " << it->id << std::endl;
             } else {
                 ++it;
             }
@@ -82,6 +83,9 @@ void Simulation::run() {
             output.write(step);
 
     }
+
+
+    output.write(simSteps);
 
     std::cout << "Finished simulation" << std::endl;
 
