@@ -13,21 +13,25 @@
 
 void Simulation::run() {
 
-    unsigned int simSteps = 200;
-    PRECISION stepSize = 0.005;
+    unsigned int simSteps = 3000;
+    PRECISION stepSize = 0.1;
+
     auto integrator = Leapfrog(stepSize);
     auto force = VelocityFieldOnly();
 
-    auto generator = SphereGenerator(100);
+    auto generator = SphereGenerator(40);
     generator.mesh = 0.1;
-    generator.center[1] = 5;
+    generator.center[1] = 8;
 
     std::vector<Particle> particles;
 
     generator.generate(particles);
 
+    particles.push_back(Particle({0, 0}, {0, 0}, 1000000, -1));
+
     std::string filename = "sim";
     auto output = VTKWriter(particles, filename, 0);
+
     auto particleContainer = LinkedCells(particles);
 
     auto preStep = std::bind(&Integrator::doStepPreForce, std::ref(integrator), std::placeholders::_1);
@@ -78,8 +82,14 @@ void Simulation::run() {
             }
         }
 
+#ifdef DOREVERSE
+        if ( step == simSteps / 2) {
+            std::cout << "Inverse now" << std::endl;
+            integrator.reverse();
+        }
+#endif
 
-        if (step % 1 == 0)
+        if (step % 50 == 0)
             output.write(step);
 
     }

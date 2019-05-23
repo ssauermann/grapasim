@@ -6,12 +6,16 @@
 
 class Integrator {
 protected:
-    const PRECISION stepsize;
+    PRECISION stepsize;
 
-    explicit Integrator(const PRECISION stepsize): stepsize(stepsize) {
+    explicit Integrator(const PRECISION stepsize) : stepsize(stepsize) {
     }
 
 public:
+
+    void reverse() {
+        this->stepsize = -this->stepsize;
+    }
 
     virtual void doStepPreForce(Particle &particle) = 0;
 
