@@ -13,14 +13,16 @@
 
 void Simulation::run() {
 
-    unsigned int simSteps = 3000;
-    PRECISION stepSize = 0.1;
+    unsigned int simSteps = 100;
+    PRECISION stepSize = 0.0001;
+    unsigned int writeFrequency = 1;
 
     auto integrator = Leapfrog(stepSize);
     auto force = ForceFieldOnly();
 
-    auto generator = SphereGenerator(40);
-    generator.mesh = 0.1;
+    auto generator = SphereGenerator(5);
+    generator.mesh = 1.1;
+    generator.size = 1;
     generator.center.y = 8;
 
     std::vector<Particle> particles;
@@ -38,6 +40,7 @@ void Simulation::run() {
     auto preStep = std::bind(&Integrator::doStepPreForce, std::ref(integrator), std::placeholders::_1);
     auto postStep = std::bind(&Integrator::doStepPostForce, std::ref(integrator), std::placeholders::_1);
     auto forces = std::bind(&Forces::calculate, std::ref(force), std::placeholders::_1);
+    auto forcePairs = std::bind(&Forces::interact, std::ref(force), std::placeholders::_1,std::placeholders::_2);
 
     /*auto print = [](Particle &p) {
         std::string velocity = "[";
@@ -60,6 +63,7 @@ void Simulation::run() {
     std::cout << "Simulating " << particles.size() << " particles\n";
     //Calculate starting forces
     particleContainer.iterate(forces);
+    particleContainer.iteratePairs(forcePairs);
 
 
     for (unsigned int step = 0; step < simSteps; ++step) {
@@ -67,6 +71,7 @@ void Simulation::run() {
         particleContainer.iterate(preStep);
 
         particleContainer.iterate(forces);
+        particleContainer.iteratePairs(forcePairs);
 
         particleContainer.iterate(postStep);
 
@@ -95,7 +100,7 @@ void Simulation::run() {
         }
 #endif
 
-        if (step % 50 == 0)
+        if (step % writeFrequency == 0)
             output.write(step);
 
     }

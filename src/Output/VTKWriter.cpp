@@ -66,6 +66,12 @@ void VTKWriter::plotParticle(const Particle &particle) {
 #else
     data_iterator->push_back(0);
 #endif
+
+    data_iterator++;
+    // particle radius
+    data_iterator->push_back(particle.radius);
+
+
     // Coordinates
     Points::DataArray_sequence &pointsArraySequence = this->vtkFile->UnstructuredGrid()->Piece().Points().DataArray();
     Points::DataArray_iterator coordinates_iterator = pointsArraySequence.begin();
@@ -96,6 +102,8 @@ void VTKWriter::initializeVTKFile() {
     pointData.DataArray().push_back(forces);
     DataArray_t velocities(type::Float32, "velocities", 3);
     pointData.DataArray().push_back(velocities);
+    DataArray_t diameter(type::Float32, "radius", 1);
+    pointData.DataArray().push_back(diameter);
 
     CellData cellData; // we don't have cell data => leave it empty
 
