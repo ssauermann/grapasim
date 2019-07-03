@@ -8,7 +8,7 @@
 #include "Particles/Particle.h"
 #include "Particles/LinkedCells.h"
 #include "Forces/Forces.h"
-#include "Forces/VelocityFieldOnly.h"
+#include "Forces/ForceFieldOnly.h"
 #include "Output/XYZWriter.h"
 
 void Simulation::run() {
@@ -17,7 +17,7 @@ void Simulation::run() {
     PRECISION stepSize = 0.1;
 
     auto integrator = Leapfrog(stepSize);
-    auto force = VelocityFieldOnly();
+    auto force = ForceFieldOnly();
 
     auto generator = SphereGenerator(40);
     generator.mesh = 0.1;
@@ -27,7 +27,7 @@ void Simulation::run() {
 
     generator.generate(particles);
 
-    particles.push_back(Particle({0, 0}, {0, 0}, 1000000, -1));
+    //particles.push_back(Particle({0, 0}, {0, 0}, 100, 5, -1));
 
     std::string filename = "sim";
     auto output = VTKWriter(particles, filename, 0);
@@ -55,6 +55,10 @@ void Simulation::run() {
 
         std::cout << "Particle(" << position << " - " << velocity << ")" << std::endl;
     };
+
+    //Calculate starting forces
+    particleContainer.iterate(forces);
+
 
     for (unsigned int step = 0; step < simSteps; ++step) {
 

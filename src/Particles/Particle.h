@@ -5,12 +5,9 @@
 
 struct Particle {
 
-    Particle(VECTOR x, VECTOR v, PRECISION mass, unsigned long id){
-        this->x = x;
+    Particle(VECTOR x, VECTOR v, PRECISION mass, PRECISION radius, unsigned long id) :
+            x(x), v(v), mass(mass), radius(radius), id(id) {
         this->F.fill(0);
-        this->v = v;
-        this->mass = mass;
-        this->id = id;
     }
 
     VECTOR x;
@@ -20,6 +17,8 @@ struct Particle {
     VECTOR v;
 
     PRECISION mass;
+
+    PRECISION radius;
 
     unsigned long id;
 
