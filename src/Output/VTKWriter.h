@@ -4,8 +4,8 @@
 #include "OutputWriter.h"
 
 class VTKFile_t;
-struct VTKFile_tDeleter
-{
+
+struct VTKFile_tDeleter {
     void operator()(VTKFile_t *p);
 };
 
@@ -17,18 +17,21 @@ class VTKWriter : public OutputWriter {
 
     unsigned int rank;
 
-
-public:
-    VTKWriter(const std::vector<Particle> &particles, const std::string &filename, const unsigned int rank)
-            : OutputWriter(particles, filename), rank(rank) {}
-
-    void write(unsigned long iteration) override;
-
-    void plotParticle(const Particle &particle);
+    std::string fileName;
 
     void initializeVTKFile();
 
-
     void initializeParallelVTKFile(const std::vector<std::string> &fileNames);
+
+public:
+    VTKWriter(const std::string &filename, const unsigned int rank)
+            : OutputWriter(filename), rank(rank) {}
+
+    void writeBegin(unsigned long iteration, int numParticles) override;
+
+    void plotParticle(const Particle &particle) override;
+
+    void writeFinalize() override;
+
 
 };

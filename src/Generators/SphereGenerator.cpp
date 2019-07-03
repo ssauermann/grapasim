@@ -67,7 +67,7 @@ void SphereGenerator::doGenerate(const Vector &corner,
             position += this->center;
 
 
-            Particle p(position, this->initialVelocity, this->mass, this->size, newId);
+            Particle p(position, this->initialVelocity, this->mass, this->size, newId, this->type);
 
             particles.push_back(p);
         }

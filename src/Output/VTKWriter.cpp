@@ -6,13 +6,9 @@
 #include "VTK/vtk-unstructured.h"
 #include "VTK/vtk-punstructured.h"
 
-void VTKWriter::write(unsigned long iteration) {
+void VTKWriter::writeBegin(unsigned long iteration, int numParticles) {
 #ifdef VTK
     this->initializeVTKFile();
-
-    for (auto &p : this->particles) {
-        this->plotParticle(p);
-    }
 
     std::stringstream fileNameStream;
     fileNameStream << this->filename;
@@ -28,14 +24,16 @@ void VTKWriter::write(unsigned long iteration) {
 	}
 #endif*/
     fileNameStream << "_" << iteration << ".vtu";
-    auto fileName = fileNameStream.str();
-
-    this->vtkFile->UnstructuredGrid()->Piece().NumberOfPoints(this->particles.size()); // sets the number of points
-    std::ofstream file(fileName);
-    VTKFile(file, *this->vtkFile); //actually writes the file
+    this->fileName = fileNameStream.str();
+    this->vtkFile->UnstructuredGrid()->Piece().NumberOfPoints(numParticles); // sets the number of points
 #else
     assert(false && "GraPaSim was not compiled with VTK support, but the VTK writer is used");
 #endif
+}
+
+void VTKWriter::writeFinalize() {
+    std::ofstream file(fileName);
+    VTKFile(file, *this->vtkFile); //actually writes the file
 }
 
 void VTKWriter::plotParticle(const Particle &particle) {
@@ -44,6 +42,9 @@ void VTKWriter::plotParticle(const Particle &particle) {
     PointData::DataArray_iterator data_iterator = pointDataArraySequence.begin();
     // id
     data_iterator->push_back(particle.id);
+    data_iterator++;
+    // type
+    data_iterator->push_back(particle.type);
     data_iterator++;
     // mpi-node rank
     data_iterator->push_back(this->rank);
@@ -85,6 +86,8 @@ void VTKWriter::initializeVTKFile() {
     PointData pointData;
     DataArray_t particleId(type::Float32, "id", 1);
     pointData.DataArray().push_back(particleId);
+    DataArray_t particleType(type::Int32, "type", 1);
+    pointData.DataArray().push_back(particleType);
 
     DataArray_t node_rank(type::Int32, "node-rank", 1);
     pointData.DataArray().push_back(node_rank);
@@ -119,12 +122,17 @@ void VTKWriter::initializeParallelVTKFile(const std::vector<std::string> &fileNa
     PPointData p_pointData;
     DataArray_t p_particleId(type::Float32, "id", 1);
     p_pointData.PDataArray().push_back(p_particleId);
+    DataArray_t particleType(type::Int32, "type", 1);
+    p_pointData.PDataArray().push_back(particleType);
+
     DataArray_t p_node_rank(type::Int32, "node-rank", 1);
     p_pointData.PDataArray().push_back(p_node_rank);
     DataArray_t p_forces(type::Float32, "forces", 3);
     p_pointData.PDataArray().push_back(p_forces);
     DataArray_t p_velocities(type::Float32, "velocities", 3);
     p_pointData.PDataArray().push_back(p_velocities);
+    DataArray_t diameter(type::Float32, "radius", 1);
+    p_pointData.PDataArray().push_back(diameter);
 
 
     PCellData p_cellData; // we don't have cell data => leave it empty
@@ -140,8 +148,8 @@ void VTKWriter::initializeParallelVTKFile(const std::vector<std::string> &fileNa
     p_cells.PDataArray().push_back(p_cells_data);
 
     PUnstructuredGrid_t p_unstructuredGrid(p_pointData, p_cellData, p_points, p_cells);
-    for (const auto &fileName : fileNames) {
-        Piece p_piece(fileName);
+    for (const auto &fn : fileNames) {
+        Piece p_piece(fn);
         p_unstructuredGrid.Piece().push_back(p_piece);
     }
 

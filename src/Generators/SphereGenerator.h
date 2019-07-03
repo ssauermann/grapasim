@@ -16,6 +16,7 @@ public:
     unsigned int radius = 1;
     Vector center{0};
     PRECISION size = 1;
+    int type = 0;
 
     explicit SphereGenerator(unsigned int radius) : radius(radius) {
     }

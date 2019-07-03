@@ -13,4 +13,9 @@ public:
 
     virtual void iterate(const std::function<void(Particle&)>&) = 0;
 
+    virtual void iterateAll(const std::function<void(Particle&)>&) = 0;
+
+    virtual int particleCount(bool includeVirtual) = 0;
+
+
 };

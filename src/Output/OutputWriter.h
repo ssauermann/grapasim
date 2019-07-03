@@ -8,12 +8,14 @@
 class OutputWriter {
 protected:
     const std::string &filename;
-    const std::vector<Particle> &particles;
 
-    OutputWriter(const std::vector<Particle> &particles, const std::string &filename) : particles(particles),
-                                                                                        filename(filename) {}
+    OutputWriter(const std::string &filename) : filename(filename) {};
 
 public:
-    virtual void write(unsigned long iteration) = 0;
+    virtual void writeBegin(unsigned long iteration, int numParticles) = 0;
+
+    virtual void plotParticle(const Particle &p) = 0;
+
+    virtual void writeFinalize() = 0;
 };
 

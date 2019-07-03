@@ -1,17 +1,21 @@
 #pragma once
 
+#include <fstream>
 #include "../Constants.h"
 #include "OutputWriter.h"
 
 class XYZWriter : public OutputWriter {
-
+    std::ofstream file;
 
 public:
 
-    XYZWriter(const std::vector<Particle> &particles, const std::string &filename) : OutputWriter(particles,
-                                                                                                 filename) {}
+    XYZWriter(const std::string &filename) : OutputWriter(filename) {}
 
-    void write(unsigned long iteration) override;
+    void writeBegin(unsigned long iteration, int numParticles) override;
+
+    void plotParticle(const Particle &p) override;
+
+    void writeFinalize() override;
 
 };
 

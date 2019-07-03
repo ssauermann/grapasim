@@ -3,6 +3,7 @@
 #include <Domain/Domain.h>
 #include <tuple>
 #include <iostream>
+#include <cassert>
 
 #include "ParticleContainer.h"
 #include "IntVector.h"
@@ -15,7 +16,7 @@ class LinkedCells : public ParticleContainer {
     Vector cellSize = {0, 0, 0};
     IntVector numCells = {0, 0, 0};
 
-    typedef std::pair<int, std::vector<Particle*>> Cell;
+    typedef std::pair<int, std::vector<Particle *>> Cell;
 
     std::vector<Cell> cells;
     std::vector<Cell> halo;
@@ -32,15 +33,21 @@ class LinkedCells : public ParticleContainer {
     }
 
     IntVector cellIndex(Particle &p) {
-        IntVector indx = {0};
-        indx.x = (int) ((p.x.x - domain.x.first) / cellSize.x) + 1;
-        indx.y = (int) ((p.x.y - domain.y.first) / cellSize.y) + 1;
-        indx.z = (int) ((p.x.z - domain.z.first) / cellSize.z) + 1;
-        return indx;
+        IntVector idx = {0};
+        idx.x = (int) ((p.x.x - domain.x.first) / cellSize.x) + 1;
+        idx.y = (int) ((p.x.y - domain.y.first) / cellSize.y) + 1;
+        idx.z = (int) ((p.x.z - domain.z.first) / cellSize.z) + 1;
+
+        assert(idx.x > 0 && idx.x < numCells.x - 1);
+        assert(idx.y > 0 && idx.y < numCells.y - 1);
+        assert(idx.z > 0 && idx.z < numCells.z - 1);
+
+        return idx;
     }
 
     int to1dIndex(IntVector multiIndex) {
         auto idx = multiIndex.x * numCells.y * numCells.z + multiIndex.y * numCells.z + multiIndex.z;
+        std::cout << multiIndex.x << ", " << multiIndex.y << ", " << multiIndex.z << " - " << idx << "\n";
         return idx;
     }
 
@@ -56,7 +63,7 @@ public:
         for (int i = 0; i < numCells.x; ++i) {
             for (int j = 0; j < numCells.y; ++j) {
                 for (int k = 0; k < numCells.z; ++k) {
-                    auto cell = std::make_pair(0, std::vector<Particle*>());
+                    auto cell = std::make_pair(0, std::vector<Particle *>());
                     cell.first = to1dIndex({i, j, k});
                     this->cells.push_back(cell);
 
@@ -77,12 +84,20 @@ public:
                 }
             }
         }
-        
+
         pairOffsets = calculatePairs();
 
         std::cout << "Linked cells initialized with (" << numCells.x << ", " << numCells.y << ", " << numCells.z
                   << ") cells\n";
 
+        // Sanity check
+        for(auto& p: particles){
+            // Assert that no particle is outside of the domain (not even in halo)
+            auto idx = cellIndex(p);
+            assert(idx.x > 0 && idx.x < numCells.x - 1);
+            assert(idx.y > 0 && idx.y < numCells.y - 1);
+            assert(idx.z > 0 && idx.z < numCells.z - 1);
+        }
 
     }
 
@@ -104,5 +119,9 @@ public:
     void iteratePairs(const std::function<void(Particle &, Particle &)> &function) override;
 
     void iterate(const std::function<void(Particle &)> &function) override;
+
+    void iterateAll(const std::function<void(Particle&)>&) override ;
+
+    int particleCount(bool includeVirtual) override ;
 };
 

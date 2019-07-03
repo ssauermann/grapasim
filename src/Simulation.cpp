@@ -20,24 +20,23 @@ void Simulation::run() {
     auto integrator = Leapfrog(stepSize);
     auto force = ForceFieldOnly();
 
-    auto generator = SphereGenerator(5);
+    auto generator = SphereGenerator(2);
     generator.mass = 1;
-    generator.mesh = 0.45;
-    generator.size = 1;
-    generator.center.y = 8;
+    generator.mesh = 1;
+    generator.dimensions = 2;
+    generator.size = 0.5;
+    generator.center.y = 5;
+    generator.center.x = 5;
 
-    Domain domain = {.x = std::make_pair(0, 50), .y = std::make_pair(0, 50), .z = std::make_pair(0, 50)};
-    Vector cellSizeTarget = {5, 5, 5};
+    Domain domain = {.x = std::make_pair(0, 10), .y = std::make_pair(0, 10), .z = std::make_pair(0, 1)};
+    Vector cellSizeTarget = {2, 2, 1};
 
     std::vector<Particle> particles;
 
     generator.generate(particles);
 
-
-    //particles.push_back(Particle({0, 0}, {0, 0}, 100, 5, -1));
-
     std::string filename = "sim";
-    auto output = VTKWriter(particles, filename, 0);
+    auto output = VTKWriter(filename, 0);
 
     auto particleContainer = LinkedCells(domain, cellSizeTarget, particles);
 
@@ -46,11 +45,16 @@ void Simulation::run() {
     auto forces = std::bind(&Forces::calculate, std::ref(force), std::placeholders::_1);
     auto forcePairs = std::bind(&Forces::interact, std::ref(force), std::placeholders::_1, std::placeholders::_2);
 
+    auto outputW = std::bind(&OutputWriter::plotParticle, std::ref(output), std::placeholders::_1);
+
     std::cout << "Simulating " << particles.size() << " particles\n";
     //Calculate starting forces
     particleContainer.iterate(forces);
     particleContainer.iteratePairs(forcePairs);
-    output.write(0);
+
+    output.writeBegin(0, particleContainer.particleCount(true));
+    particleContainer.iterateAll(outputW);
+    output.writeFinalize();
 
 
     for (unsigned int step = 1; step <= simSteps; ++step) {
@@ -75,11 +79,12 @@ void Simulation::run() {
         }
 #endif
 
-        if (step % writeFrequency == 0)
-            output.write(step);
+        if (step % writeFrequency == 0 || step == simSteps) {
+            output.writeBegin(step, particleContainer.particleCount(true));
+            particleContainer.iterateAll(outputW);
+            output.writeFinalize();
+        }
     }
-
-    output.write(simSteps);
 
     std::cout << "Finished simulation" << std::endl;
 
