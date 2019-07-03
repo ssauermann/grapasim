@@ -1,20 +1,20 @@
 #pragma once
 
 #include <tuple>
+#include <Vector.h>
 #include "../Constants.h"
 
 struct Particle {
 
-    Particle(VECTOR x, VECTOR v, PRECISION mass, PRECISION radius, unsigned long id) :
-            x(x), v(v), mass(mass), radius(radius), id(id) {
-        this->F.fill(0);
+    Particle(Vector x, Vector v, PRECISION mass, PRECISION radius, unsigned long id) :
+            x(x), F({0}) , v(v), mass(mass), radius(radius), id(id){;
     }
 
-    VECTOR x;
+    Vector x;
 
-    VECTOR F;
+    Vector F;
 
-    VECTOR v;
+    Vector v;
 
     PRECISION mass;
 

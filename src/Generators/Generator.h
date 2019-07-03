@@ -9,7 +9,7 @@ public:
     unsigned int dimensions = DIMENSIONS;
     PRECISION mesh = 1;
     PRECISION mass = 1;
-    VECTOR initialVelocity{0};
+    Vector initialVelocity{0};
 
     virtual void generate(std::vector<Particle> &particles) = 0;
 };

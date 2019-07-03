@@ -26,9 +26,11 @@ void XYZWriter::write(unsigned long iteration) {
 
     for (auto &p: this->particles) {
         file << "P ";
-        for (int i = 0; i < DIMENSIONS; ++i) {
-            file << p.x[i] << " ";
-        }
+        file << p.x.x << " ";
+        file << p.x.y << " ";
+#if DIMENSIONS > 2
+        file << p.x.z << " ";
+#endif
 
         file << std::endl;
     }

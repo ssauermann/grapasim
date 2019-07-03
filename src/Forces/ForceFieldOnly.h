@@ -5,8 +5,7 @@
 class ForceFieldOnly : public Forces {
     PRECISION k = 1; // spring constant
     PRECISION gamma = 1; // dumping coefficient
-
-    PRECISION l2Square(VECTOR a, VECTOR b);
+    PRECISION mu = 1; // friction coefficient
 
 public:
     void calculate(Particle &particle) override;

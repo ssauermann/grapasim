@@ -5,8 +5,8 @@
 //TODO ifdef etc.
 #define DIMENSIONS 2
 
+// #define SHEAR_FORCES // Uncomment to enable shear forces
+
 // #define DOREVERSE
 
 typedef float PRECISION;
-
-typedef std::array<PRECISION, DIMENSIONS> VECTOR;

@@ -5,7 +5,7 @@
 
 class SphereGenerator : public Generator {
 
-    void doGenerate(const VECTOR &corner,
+    void doGenerate(const Vector &corner,
                     const std::array<unsigned int, DIMENSIONS> &particleNumbers,
                     std::vector<Particle> &particles,
                     const std::shared_ptr<std::array<int, DIMENSIONS>> &indices,
@@ -14,7 +14,7 @@ class SphereGenerator : public Generator {
 public:
 
     unsigned int radius = 1;
-    VECTOR center{0};
+    Vector center{0};
     PRECISION size = 1;
 
     explicit SphereGenerator(unsigned int radius) : radius(radius) {

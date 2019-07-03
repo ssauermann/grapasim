@@ -21,11 +21,12 @@ void Simulation::run() {
 
     auto generator = SphereGenerator(40);
     generator.mesh = 0.1;
-    generator.center[1] = 8;
+    generator.center.y = 8;
 
     std::vector<Particle> particles;
 
     generator.generate(particles);
+
 
     //particles.push_back(Particle({0, 0}, {0, 0}, 100, 5, -1));
 
@@ -38,7 +39,7 @@ void Simulation::run() {
     auto postStep = std::bind(&Integrator::doStepPostForce, std::ref(integrator), std::placeholders::_1);
     auto forces = std::bind(&Forces::calculate, std::ref(force), std::placeholders::_1);
 
-    auto print = [](Particle &p) {
+    /*auto print = [](Particle &p) {
         std::string velocity = "[";
         std::string position = "[";
 
@@ -54,8 +55,9 @@ void Simulation::run() {
         position += "]";
 
         std::cout << "Particle(" << position << " - " << velocity << ")" << std::endl;
-    };
+    };*/
 
+    std::cout << "Simulating " << particles.size() << " particles\n";
     //Calculate starting forces
     particleContainer.iterate(forces);
 
@@ -73,12 +75,12 @@ void Simulation::run() {
 
         // TODO Remove when boundaries are implemented
         for (auto it = particles.begin(); it < particles.end();) {
-            if (std::isnan(it->x[0]) || std::isnan(it->x[1]) ||
-                std::isnan(it->F[0]) || std::isnan(it->F[1]) ||
-                std::isnan(it->v[0]) || std::isnan(it->v[1]) ||
-                std::abs(it->x[0]) > 10000 || std::abs(it->x[1]) > 10000 ||
-                std::abs(it->F[0]) > 10000 || std::abs(it->F[1]) > 10000 ||
-                std::abs(it->v[0]) > 10000 || std::abs(it->v[1]) > 10000) {
+            if (std::isnan(it->x.x) || std::isnan(it->x.y) ||
+                std::isnan(it->F.x) || std::isnan(it->F.y) ||
+                std::isnan(it->v.x) || std::isnan(it->v.y) ||
+                std::abs(it->x.x) > 10000 || std::abs(it->x.y) > 10000 ||
+                std::abs(it->F.x) > 10000 || std::abs(it->F.y) > 10000 ||
+                std::abs(it->v.x) > 10000 || std::abs(it->v.y) > 10000) {
                 particles.erase(it);
                 std::cout << "Deleted particle: " << it->id << std::endl;
             } else {

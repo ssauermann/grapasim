@@ -49,23 +49,35 @@ void VTKWriter::plotParticle(const Particle &particle) {
     data_iterator->push_back(this->rank);
     data_iterator++;
     // forces
-    for (int i = 0; i < 3; ++i) {
-        data_iterator->push_back(i < DIMENSIONS ? particle.F[i] : 0);
-    }
+    data_iterator->push_back(particle.F.x);
+    data_iterator->push_back(particle.F.y);
+#if DIMENSIONS > 2
+    data_iterator->push_back(particle.F.z);
+#else
+    data_iterator->push_back(0);
+#endif
+
     data_iterator++;
     // velocities
-    for (int i = 0; i < 3; ++i) {
-        data_iterator->push_back(i < DIMENSIONS ? particle.v[i] : 0);
-    }
-
+    data_iterator->push_back(particle.v.x);
+    data_iterator->push_back(particle.v.y);
+#if DIMENSIONS > 2
+    data_iterator->push_back(particle.v.z);
+#else
+    data_iterator->push_back(0);
+#endif
     // Coordinates
     Points::DataArray_sequence &pointsArraySequence = this->vtkFile->UnstructuredGrid()->Piece().Points().DataArray();
     Points::DataArray_iterator coordinates_iterator = pointsArraySequence.begin();
 
     // positions
-    for (int i = 0; i < 3; ++i) {
-        coordinates_iterator->push_back(i < DIMENSIONS ? particle.x[i] : 0);
-    }
+    coordinates_iterator->push_back(particle.x.x);
+    coordinates_iterator->push_back(particle.x.y);
+#if DIMENSIONS > 2
+    coordinates_iterator->push_back(particle.x.z);
+#else
+    coordinates_iterator->push_back(0);
+#endif
 #endif
 }
 

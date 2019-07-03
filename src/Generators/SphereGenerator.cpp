@@ -9,14 +9,18 @@ void SphereGenerator::generate(std::vector<Particle> &particles) {
 
     // Choose corner position of the cube so that the center is at (0,0,0)
     // -1 if dimension is used (and cube has to be moved in this dimension) else 0.
-    VECTOR corner{};
-    for (int i = 0; i < DIMENSIONS; ++i) {
-        if (this->dimensions >= i) {
-            corner[i] = -(this->radius * this->mesh);
-        } else {
-            corner[i] = 0;
-        }
+    Vector corner{0};
+
+    corner.x = -(this->radius * this->mesh);
+    if(this->dimensions > 1){
+        corner.y = corner.x;
     }
+#if DIMENSIONS > 2
+    if(this->dimensions > 2){
+        corner.z = corner.x;
+    }
+#endif
+
 
     // Cuboid with one particle at (0,0,0) and 2*r particles per dimension
     std::array<unsigned int, DIMENSIONS> particleNumbers{};
@@ -33,7 +37,7 @@ void SphereGenerator::generate(std::vector<Particle> &particles) {
     doGenerate(corner, particleNumbers, particles, indices);
 }
 
-void SphereGenerator::doGenerate(const VECTOR &corner,
+void SphereGenerator::doGenerate(const Vector &corner,
                                  const std::array<unsigned int, DIMENSIONS> &particleNumbers,
                                  std::vector<Particle> &particles,
                                  const std::shared_ptr<std::array<int, DIMENSIONS>> &indices,
@@ -48,26 +52,23 @@ void SphereGenerator::doGenerate(const VECTOR &corner,
         auto newId = particles.empty() ? 0 : particles.back().id + 1;
 
         // Calculate position in grid
-        VECTOR position = corner;
+        Vector position = corner;
 
-        for (int i = 0; i < DIMENSIONS; ++i) {
-            position[i] += indices->at(i) * this->mesh;
-        }
+        position.x += indices->at(0) * this->mesh;
+        position.y += indices->at(1) * this->mesh;
+#if DIMENSIONS > 2
+        position.z += indices->at(2) * this->mesh;
+#endif
 
         //L2 Norm
-        PRECISION norm = 0;
-        for (int i = 0; i < DIMENSIONS; ++i) {
-            norm += position[i] * position[i];
-        }
-        norm = sqrt(norm);
+        PRECISION norm = position.l2norm();
 
         if (norm < this->radius * this->mesh) {
             // In circle
 
             // Move position to new center
-            for (int i = 0; i < DIMENSIONS; ++i) {
-                position[i] += this->center[i];
-            }
+            position += this->center;
+
 
             Particle p(position, this->initialVelocity, this->mass, this->size, newId);
 
