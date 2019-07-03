@@ -3,7 +3,8 @@
 #include "ForceFieldOnly.h"
 
 void ForceFieldOnly::calculate(Particle &particle) {
-
+    // Apply gravity
+    particle.F.y -= 9.80665;
 }
 
 void ForceFieldOnly::interact(Particle &particle1, Particle &particle2) {

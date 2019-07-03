@@ -14,14 +14,15 @@
 void Simulation::run() {
 
     unsigned int simSteps = 100;
-    PRECISION stepSize = 0.0001;
+    PRECISION stepSize = 0.01;
     unsigned int writeFrequency = 1;
 
     auto integrator = Leapfrog(stepSize);
     auto force = ForceFieldOnly();
 
     auto generator = SphereGenerator(5);
-    generator.mesh = 1.1;
+    generator.mass = 1;
+    generator.mesh = 0.45;
     generator.size = 1;
     generator.center.y = 8;
 
