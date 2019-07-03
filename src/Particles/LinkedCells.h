@@ -10,24 +10,24 @@
 
 class LinkedCells : public ParticleContainer {
 
-    std::vector<Particle> &particles;
-    std::vector<Particle> haloParticles;
-    Domain &domain;
+    std::vector<Particle> particles;
+    std::vector<Particle> haloParticles = std::vector<Particle>();
+    Domain domain;
     Vector cellSize = {0, 0, 0};
     IntVector numCells = {0, 0, 0};
 
     typedef std::pair<int, std::vector<Particle *>> Cell;
 
-    std::vector<Cell> cells;
-    std::vector<Cell> halo;
-    std::vector<Cell> boundary;
-    std::vector<Cell> inner;
+    std::vector<Cell *> cells;
+    std::vector<Cell *> halo;
+    std::vector<Cell *> boundary;
+    std::vector<Cell *> inner;
 
     std::vector<int> pairOffsets;
 
     PRECISION fitCells(PRECISION domainSpace, PRECISION cellSizeTarget, int *numberOfCells) {
-        int numCellsTarget = (int) ((domain.x.second - domain.x.first) / cellSizeTarget);
-        PRECISION freeDomain = (domain.x.second - domain.x.first) - (numCellsTarget * cellSizeTarget);
+        int numCellsTarget = (int) (domainSpace / cellSizeTarget);
+        PRECISION freeDomain = domainSpace - (numCellsTarget * cellSizeTarget);
         *numberOfCells = numCellsTarget + 2; // Two halo cells in each dimension
         return cellSizeTarget + freeDomain / numCellsTarget;
     }
@@ -38,23 +38,22 @@ class LinkedCells : public ParticleContainer {
         idx.y = (int) ((p.x.y - domain.y.first) / cellSize.y) + 1;
         idx.z = (int) ((p.x.z - domain.z.first) / cellSize.z) + 1;
 
-        assert(idx.x > 0 && idx.x < numCells.x - 1);
-        assert(idx.y > 0 && idx.y < numCells.y - 1);
-        assert(idx.z > 0 && idx.z < numCells.z - 1);
+        assert(idx.x >= 0 && idx.x < numCells.x);
+        assert(idx.y >= 0 && idx.y < numCells.y);
+        assert(idx.z >= 0 && idx.z < numCells.z);
 
         return idx;
     }
 
     int to1dIndex(IntVector multiIndex) {
         auto idx = multiIndex.x * numCells.y * numCells.z + multiIndex.y * numCells.z + multiIndex.z;
-        std::cout << multiIndex.x << ", " << multiIndex.y << ", " << multiIndex.z << " - " << idx << "\n";
         return idx;
     }
 
 
 public:
     explicit LinkedCells(Domain &domain, Vector cellSizeTarget, std::vector<Particle> &particles) : particles(
-            particles), domain(domain), haloParticles() {
+            particles), domain(domain) {
         // initialize cells
         this->cellSize.x = fitCells(domain.x.second - domain.x.first, cellSizeTarget.x, &numCells.x);
         this->cellSize.y = fitCells(domain.y.second - domain.y.first, cellSizeTarget.y, &numCells.y);
@@ -63,8 +62,8 @@ public:
         for (int i = 0; i < numCells.x; ++i) {
             for (int j = 0; j < numCells.y; ++j) {
                 for (int k = 0; k < numCells.z; ++k) {
-                    auto cell = std::make_pair(0, std::vector<Particle *>());
-                    cell.first = to1dIndex({i, j, k});
+                    auto cell = new std::pair<int, std::vector<Particle *>>(0, std::vector<Particle *>());
+                    cell->first = to1dIndex({i, j, k});
                     this->cells.push_back(cell);
 
                     // Test if halo block and add to halo subvector
@@ -91,7 +90,7 @@ public:
                   << ") cells\n";
 
         // Sanity check
-        for(auto& p: particles){
+        for (auto &p: particles) {
             // Assert that no particle is outside of the domain (not even in halo)
             auto idx = cellIndex(p);
             assert(idx.x > 0 && idx.x < numCells.x - 1);
@@ -120,8 +119,8 @@ public:
 
     void iterate(const std::function<void(Particle &)> &function) override;
 
-    void iterateAll(const std::function<void(Particle&)>&) override ;
+    void iterateAll(const std::function<void(Particle &)> &) override;
 
-    int particleCount(bool includeVirtual) override ;
+    int particleCount(bool includeVirtual) override;
 };
 
