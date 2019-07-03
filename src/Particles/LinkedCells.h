@@ -75,9 +75,10 @@ public:
                         if (i == 1 || j == 1 || k == 1 ||
                             i == (numCells.x - 2) || j == (numCells.y - 2) || k == (numCells.z - 2)) {
                             boundary.push_back(cell);
-                        } else { // Inner cell
-                            inner.push_back(cell);
                         }
+                        // Inner cell == non halo cell
+                        inner.push_back(cell);
+
                     }
 
                 }

@@ -6,7 +6,9 @@ void LinkedCells::iteratePairs(const std::function<void(Particle &, Particle &)>
         for (int offset: pairOffsets) {
             for (Particle *p: cell->second) {
                 for (Particle *q: cells.at(cell->first + offset)->second) {
-                    function(*p, *q);
+                    if(p != q) {
+                        function(*p, *q);
+                    }
                 }
             }
         }
@@ -46,7 +48,7 @@ void LinkedCells::updateContainer() {
     for (auto &bc : this->boundary) {
         for (Particle *p: bc->second) {
             // if is boundary in +x
-            if (p->x.x > domain.x.second - cellSize.x) {
+            if (p->x.x > domain.x.second - cellSize.x + 1e-5 ) {
                 Particle copy = *p;
                 copy.type = -1;
                 copy.x.x += 2 * (domain.x.second - p->x.x);
@@ -54,7 +56,7 @@ void LinkedCells::updateContainer() {
                 this->haloParticles.push_back(copy);
             }
             // if is boundary in -x
-            if (p->x.x <= domain.x.first + cellSize.x) {
+            if (p->x.x < domain.x.first + cellSize.x - 1e-5) {
                 Particle copy = *p;
                 copy.type = -1;
                 copy.x.x -= 2 * (p->x.x - domain.x.first);
@@ -63,7 +65,7 @@ void LinkedCells::updateContainer() {
             }
 
             // if is boundary in +y
-            if (p->x.y > domain.y.second - cellSize.y) {
+            if (p->x.y > domain.y.second - cellSize.y + 1e-5) {
                 Particle copy = *p;
                 copy.type = -1;
                 copy.x.y += 2 * (domain.y.second - p->x.y);
@@ -71,16 +73,16 @@ void LinkedCells::updateContainer() {
                 this->haloParticles.push_back(copy);
             }
             // if is boundary in -y
-            if (p->x.y <= domain.y.first + cellSize.y) {
+            if (p->x.y < domain.y.first + cellSize.y - 1e-5) {
                 Particle copy = *p;
                 copy.type = -1;
                 copy.x.y -= 2 * (p->x.y - domain.y.first);
                 copy.v.y *= -1;
                 this->haloParticles.push_back(copy);
             }
-
+/*
             // if is boundary in +z
-            if (p->x.z > domain.z.second - cellSize.z) {
+            if (p->x.z > domain.z.second - cellSize.z + 1e-5) {
                 Particle copy = *p;
                 copy.type = -1;
                 copy.x.z += 2 * (domain.z.second - p->x.z);
@@ -88,14 +90,14 @@ void LinkedCells::updateContainer() {
                 this->haloParticles.push_back(copy);
             }
             // if is boundary in -z
-            if (p->x.z <= domain.z.first + cellSize.z) {
+            if (p->x.z < domain.z.first + cellSize.z - 1e-5) {
                 Particle copy = *p;
                 copy.type = -1;
                 copy.x.z -= 2 * (p->x.z - domain.z.first);
                 copy.v.z *= -1;
                 this->haloParticles.push_back(copy);
             }
-
+*/
             // TODO Diagonal mirroring might be necessary?
         }
     }

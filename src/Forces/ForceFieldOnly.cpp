@@ -1,5 +1,6 @@
 #include <cmath>
 #include <algorithm>    // std::max
+#include <cassert>
 #include "ForceFieldOnly.h"
 
 void ForceFieldOnly::calculate(Particle &particle) {
@@ -10,6 +11,8 @@ void ForceFieldOnly::calculate(Particle &particle) {
 void ForceFieldOnly::interact(Particle &particle1, Particle &particle2) {
 
     auto l2norm = (particle2.x - particle1.x).l2norm();
+
+    assert(l2norm > 0);
 
     // penetration depth
     auto xi = std::max((PRECISION)0, particle1.radius + particle2.radius - l2norm);
