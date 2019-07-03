@@ -63,7 +63,7 @@ void SphereGenerator::doGenerate(const Vector &corner,
         //L2 Norm
         PRECISION norm = position.l2norm();
 
-        if (norm < this->radius * this->mesh) {
+        if (norm <= this->radius * this->mesh) {
             // In circle
 
             // Move position to new center

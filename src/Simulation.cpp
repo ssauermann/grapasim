@@ -64,9 +64,10 @@ void Simulation::run() {
     //Calculate starting forces
     particleContainer.iterate(forces);
     particleContainer.iteratePairs(forcePairs);
+    output.write(0);
 
 
-    for (unsigned int step = 0; step < simSteps; ++step) {
+    for (unsigned int step = 1; step <= simSteps; ++step) {
 
         particleContainer.iterate(preStep);
 
@@ -102,7 +103,6 @@ void Simulation::run() {
 
         if (step % writeFrequency == 0)
             output.write(step);
-
     }
 
 
