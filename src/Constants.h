@@ -1,9 +1,6 @@
 #pragma once
 
-#include <array>
-
-//TODO ifdef etc.
-#define DIMENSIONS 2
+#define DIMENSIONS 3
 
 // #define SHEAR_FORCES // Uncomment to enable shear forces
 

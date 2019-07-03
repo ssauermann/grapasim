@@ -7,6 +7,8 @@
 class ParticleContainer {
 
 public:
+    virtual void updateContainer() = 0;
+
     virtual void iteratePairs(const std::function<void(Particle&, Particle&)>&) = 0;
 
     virtual void iterate(const std::function<void(Particle&)>&) = 0;

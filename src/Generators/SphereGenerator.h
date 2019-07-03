@@ -6,9 +6,9 @@
 class SphereGenerator : public Generator {
 
     void doGenerate(const Vector &corner,
-                    const std::array<unsigned int, DIMENSIONS> &particleNumbers,
+                    const std::array<unsigned int, 3> &particleNumbers,
                     std::vector<Particle> &particles,
-                    const std::shared_ptr<std::array<int, DIMENSIONS>> &indices,
+                    const std::shared_ptr<std::array<int, 3>> &indices,
                     unsigned int nesting = 0);
 
 public:

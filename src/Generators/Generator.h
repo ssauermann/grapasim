@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <Particles/Particle.h>
+#include <Constants.h>
 
 class Generator {
 

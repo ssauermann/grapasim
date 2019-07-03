@@ -28,9 +28,7 @@ void XYZWriter::write(unsigned long iteration) {
         file << "P ";
         file << p.x.x << " ";
         file << p.x.y << " ";
-#if DIMENSIONS > 2
         file << p.x.z << " ";
-#endif
 
         file << std::endl;
     }

@@ -51,21 +51,14 @@ void VTKWriter::plotParticle(const Particle &particle) {
     // forces
     data_iterator->push_back(particle.F.x);
     data_iterator->push_back(particle.F.y);
-#if DIMENSIONS > 2
     data_iterator->push_back(particle.F.z);
-#else
-    data_iterator->push_back(0);
-#endif
+
 
     data_iterator++;
     // velocities
     data_iterator->push_back(particle.v.x);
     data_iterator->push_back(particle.v.y);
-#if DIMENSIONS > 2
     data_iterator->push_back(particle.v.z);
-#else
-    data_iterator->push_back(0);
-#endif
 
     data_iterator++;
     // particle radius
@@ -79,11 +72,8 @@ void VTKWriter::plotParticle(const Particle &particle) {
     // positions
     coordinates_iterator->push_back(particle.x.x);
     coordinates_iterator->push_back(particle.x.y);
-#if DIMENSIONS > 2
     coordinates_iterator->push_back(particle.x.z);
-#else
-    coordinates_iterator->push_back(0);
-#endif
+
 #endif
 }
 

@@ -3,7 +3,7 @@
 #include "SphereGenerator.h"
 
 void SphereGenerator::generate(std::vector<Particle> &particles) {
-    assert(DIMENSIONS >= this->dimensions);
+    assert(3 >= this->dimensions);
 
     // Generate a cube and remove all particles which do not fulfill the sphere equation.
 
@@ -15,17 +15,15 @@ void SphereGenerator::generate(std::vector<Particle> &particles) {
     if(this->dimensions > 1){
         corner.y = corner.x;
     }
-#if DIMENSIONS > 2
     if(this->dimensions > 2){
         corner.z = corner.x;
     }
-#endif
 
 
     // Cuboid with one particle at (0,0,0) and 2*r particles per dimension
-    std::array<unsigned int, DIMENSIONS> particleNumbers{};
+    std::array<unsigned int, 3> particleNumbers{};
 
-    for (int i = 0; i < DIMENSIONS; ++i) {
+    for (int i = 0; i < 3; ++i) {
         if (this->dimensions >= i) {
             particleNumbers[i] = this->radius * 2 + 1;
         } else {
@@ -33,14 +31,14 @@ void SphereGenerator::generate(std::vector<Particle> &particles) {
         }
     }
 
-    auto indices = std::make_shared<std::array<int, DIMENSIONS>>();
+    auto indices = std::make_shared<std::array<int, 3>>();
     doGenerate(corner, particleNumbers, particles, indices);
 }
 
 void SphereGenerator::doGenerate(const Vector &corner,
-                                 const std::array<unsigned int, DIMENSIONS> &particleNumbers,
+                                 const std::array<unsigned int, 3> &particleNumbers,
                                  std::vector<Particle> &particles,
-                                 const std::shared_ptr<std::array<int, DIMENSIONS>> &indices,
+                                 const std::shared_ptr<std::array<int, 3>> &indices,
                                  unsigned int nesting) {
 
     if (nesting < this->dimensions) {
@@ -56,9 +54,8 @@ void SphereGenerator::doGenerate(const Vector &corner,
 
         position.x += indices->at(0) * this->mesh;
         position.y += indices->at(1) * this->mesh;
-#if DIMENSIONS > 2
         position.z += indices->at(2) * this->mesh;
-#endif
+
 
         //L2 Norm
         PRECISION norm = position.l2norm();

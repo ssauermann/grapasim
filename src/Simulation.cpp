@@ -26,6 +26,9 @@ void Simulation::run() {
     generator.size = 1;
     generator.center.y = 8;
 
+    Domain domain = {.x = std::make_pair(0, 50), .y = std::make_pair(0, 50), .z = std::make_pair(0, 50)};
+    Vector cellSizeTarget = {5, 5, 5};
+
     std::vector<Particle> particles;
 
     generator.generate(particles);
@@ -36,30 +39,12 @@ void Simulation::run() {
     std::string filename = "sim";
     auto output = VTKWriter(particles, filename, 0);
 
-    auto particleContainer = LinkedCells(particles);
+    auto particleContainer = LinkedCells(domain, cellSizeTarget, particles);
 
     auto preStep = std::bind(&Integrator::doStepPreForce, std::ref(integrator), std::placeholders::_1);
     auto postStep = std::bind(&Integrator::doStepPostForce, std::ref(integrator), std::placeholders::_1);
     auto forces = std::bind(&Forces::calculate, std::ref(force), std::placeholders::_1);
-    auto forcePairs = std::bind(&Forces::interact, std::ref(force), std::placeholders::_1,std::placeholders::_2);
-
-    /*auto print = [](Particle &p) {
-        std::string velocity = "[";
-        std::string position = "[";
-
-        for (int i = 0; i < DIMENSIONS; ++i) {
-            velocity += std::to_string(p.v[i]);
-            position += std::to_string(p.x[i]);
-            if (i < DIMENSIONS - 1) {
-                velocity += ", ";
-                position += ", ";
-            }
-        }
-        velocity += "]";
-        position += "]";
-
-        std::cout << "Particle(" << position << " - " << velocity << ")" << std::endl;
-    };*/
+    auto forcePairs = std::bind(&Forces::interact, std::ref(force), std::placeholders::_1, std::placeholders::_2);
 
     std::cout << "Simulating " << particles.size() << " particles\n";
     //Calculate starting forces
@@ -69,6 +54,8 @@ void Simulation::run() {
 
 
     for (unsigned int step = 1; step <= simSteps; ++step) {
+
+        particleContainer.updateContainer();
 
         particleContainer.iterate(preStep);
 
@@ -80,20 +67,6 @@ void Simulation::run() {
         // particleContainer.iterate(print);
 
 
-        // TODO Remove when boundaries are implemented
-        for (auto it = particles.begin(); it < particles.end();) {
-            if (std::isnan(it->x.x) || std::isnan(it->x.y) ||
-                std::isnan(it->F.x) || std::isnan(it->F.y) ||
-                std::isnan(it->v.x) || std::isnan(it->v.y) ||
-                std::abs(it->x.x) > 10000 || std::abs(it->x.y) > 10000 ||
-                std::abs(it->F.x) > 10000 || std::abs(it->F.y) > 10000 ||
-                std::abs(it->v.x) > 10000 || std::abs(it->v.y) > 10000) {
-                particles.erase(it);
-                std::cout << "Deleted particle: " << it->id << std::endl;
-            } else {
-                ++it;
-            }
-        }
 
 #ifdef DOREVERSE
         if ( step == simSteps / 2) {
@@ -105,7 +78,6 @@ void Simulation::run() {
         if (step % writeFrequency == 0)
             output.write(step);
     }
-
 
     output.write(simSteps);
 

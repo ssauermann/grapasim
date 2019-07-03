@@ -6,9 +6,7 @@
 struct Vector {
     PRECISION x;
     PRECISION y;
-#if DIMENSIONS > 2
     PRECISION z;
-#endif
 
     PRECISION l2norm() {
         return sqrt((*this)*(*this));
@@ -20,10 +18,7 @@ struct Vector {
 
         sum += lhs.x * rhs.x;
         sum += lhs.y * rhs.y;
-
-#if DIMENSIONS > 2
         sum += lhs.z * rhs.z;
-#endif
 
         return sum;
     }
@@ -31,36 +26,28 @@ struct Vector {
     Vector& operator+=(const Vector& rhs){
         x += rhs.x;
         y += rhs.y;
-#if DIMENSIONS > 2
         z += rhs.z;
-#endif
         return *this;
     }
 
     Vector& operator-=(const Vector& rhs){
         x -= rhs.x;
         y -= rhs.y;
-#if DIMENSIONS > 2
         z -= rhs.z;
-#endif
         return *this;
     }
 
     Vector& operator*=(const PRECISION rhs){
         x *= rhs;
         y *= rhs;
-#if DIMENSIONS > 2
         z *= rhs;
-#endif
         return *this;
     }
 
     Vector& operator/=(const PRECISION rhs){
         x /= rhs;
         y /= rhs;
-#if DIMENSIONS > 2
         z /= rhs;
-#endif
         return *this;
     }
 
