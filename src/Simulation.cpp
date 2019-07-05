@@ -3,6 +3,7 @@
 #include <cmath>
 #include <Output/VTKWriter.h>
 #include <Generators/SphereGenerator.h>
+#include <Generators/MaxwellBoltzmann.h>
 #include "Simulation.h"
 #include "Integration/Leapfrog.h"
 #include "Particles/Particle.h"
@@ -13,27 +14,30 @@
 
 void Simulation::run() {
 
-    unsigned int simSteps = 100;
-    PRECISION stepSize = 0.01;
-    unsigned int writeFrequency = 1;
+    PRECISION stepSize = 1.25e-06;
+
+    unsigned int simSteps = 300000;
+    unsigned int writeFrequency = 1000;
 
     auto integrator = Leapfrog(stepSize);
     auto force = ForceFieldOnly();
 
-    auto generator = SphereGenerator(2);
-    generator.mass = 1;
-    generator.mesh = 1;
-    generator.dimensions = 2;
-    generator.size = 0.5;
-    generator.center.y = 5;
-    generator.center.x = 5;
-
-    Domain domain = {.x = std::make_pair(0, 10), .y = std::make_pair(0, 10), .z = std::make_pair(0, 1)};
-    Vector cellSizeTarget = {2, 2, 1};
-
+    Domain domain = {.x = std::make_pair(-0.1, 0.1), .y = std::make_pair(-0.1, 3), .z = std::make_pair(-1, 1)};
+    Vector cellSizeTarget = {0.01, 0.01, 1};
     std::vector<Particle> particles;
 
+    auto generator = SphereGenerator(3);
+    generator.mass = 0.1;
+    generator.mesh = 0.0101;
+    generator.dimensions = 2;
+    generator.size = 0.005; //0.0005;
+
     generator.generate(particles);
+    auto mwb = MaxwellBoltzmannDistribution(0.001, 2);
+    for (auto &p: particles) {
+        // p.v.y = -5;
+        mwb.apply(p);
+    }
 
     std::string filename = "sim";
     auto output = VTKWriter(filename, 0);
@@ -49,6 +53,7 @@ void Simulation::run() {
 
     std::cout << "Simulating " << particles.size() << " particles\n";
     //Calculate starting forces
+    particleContainer.updateContainer();
     particleContainer.iterate(forces);
     particleContainer.iteratePairs(forcePairs);
 
