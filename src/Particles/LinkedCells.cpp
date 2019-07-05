@@ -1,8 +1,9 @@
 #include "LinkedCells.h"
 
 void LinkedCells::iteratePairs(const std::function<void(Particle &, Particle &)> &function) {
-
-    for (auto &cell: inner) {
+#pragma omp parallel for
+    for(auto it = this->inner.begin(); it < this->inner.end(); ++it){
+        auto& cell = *it;
         for (int offset: pairOffsets) {
             for (Particle *p: cell->second) {
                 for (Particle *q: cells.at(cell->first + offset)->second) {
