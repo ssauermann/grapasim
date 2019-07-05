@@ -62,8 +62,8 @@ void VTKWriter::plotParticle(const Particle &particle) {
     data_iterator->push_back(particle.v.z);
 
     data_iterator++;
-    // particle radius
-    data_iterator->push_back(particle.radius);
+    // particle diameter
+    data_iterator->push_back(particle.radius * 2);
 
 
     // Coordinates
@@ -95,7 +95,7 @@ void VTKWriter::initializeVTKFile() {
     pointData.DataArray().push_back(forces);
     DataArray_t velocities(type::Float32, "velocities", 3);
     pointData.DataArray().push_back(velocities);
-    DataArray_t diameter(type::Float32, "radius", 1);
+    DataArray_t diameter(type::Float32, "diameter", 1);
     pointData.DataArray().push_back(diameter);
 
     CellData cellData; // we don't have cell data => leave it empty
