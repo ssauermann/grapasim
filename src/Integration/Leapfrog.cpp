@@ -7,6 +7,7 @@ void Leapfrog::doStepPreForce(Particle &particle) {
     // Update positions
     particle.x += this->stepsize * particle.v;
 
+    particle.F = {0};
 }
 
 void Leapfrog::doStepPostForce(Particle &particle) {

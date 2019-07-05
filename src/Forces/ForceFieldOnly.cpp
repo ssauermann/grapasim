@@ -5,7 +5,7 @@
 
 void ForceFieldOnly::calculate(Particle &particle) {
     // Apply gravity
-    particle.F.y -= 9.80665;
+   particle.F.y -= 9.80665 * particle.mass;
 }
 
 void ForceFieldOnly::interact(Particle &particle1, Particle &particle2) {
@@ -15,7 +15,11 @@ void ForceFieldOnly::interact(Particle &particle1, Particle &particle2) {
     assert(l2norm > 0);
 
     // penetration depth
-    auto xi = std::max((PRECISION)0, particle1.radius + particle2.radius - l2norm);
+    auto xi = particle1.radius + particle2.radius - l2norm;
+
+    if(xi <= 0) {
+        return;
+    }
 
     // Normal vector
     auto N = (particle2.x - particle1.x) / l2norm;

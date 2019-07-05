@@ -3,8 +3,15 @@
 #include "Forces.h"
 
 class ForceFieldOnly : public Forces {
-    PRECISION k = 1; // spring constant
-    PRECISION gamma = 1; // dumping coefficient
+    PRECISION k = 4.0e+03; // spring constant
+    PRECISION gamma = 4.0e-01; // damping coefficient
+
+   // k_normal = 4.0e+03
+   // c_normal = 4.0e-01
+   // k_tangent = 1.6e+03
+   // c_tangent = 2.5e-01
+
+
     PRECISION mu = 1; // friction coefficient
 
 public:
