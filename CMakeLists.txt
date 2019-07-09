@@ -1,6 +1,7 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.5)
 project(GraPaSim)
 
+set( CMAKE_VERBOSE_MAKEFILE ON )
 set(CMAKE_CXX_STANDARD 17)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -18,7 +19,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules/)
 
 # include vectorization module
-#include(vectorization)
+include(vectorization)
 # include OpenMP module
 include(OpenMP)
 # include options module
