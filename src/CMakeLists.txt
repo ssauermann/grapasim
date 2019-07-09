@@ -1,6 +1,7 @@
 file(GLOB_RECURSE MY_SRC
         "*.cpp"
         "*.h"
+        "*.cu"
         )
 # if mpi is not enabled, remove the uneeded source files
 #if(NOT ENABLE_MPI)
@@ -24,7 +25,10 @@ if(NOT ENABLE_VTK)
  #           list (REMOVE_ITEM MY_SRC ${TMP_PATH})
  #       endif ()
  #   endforeach(TMP_PATH)
- list(FILTER MY_SRC EXCLUDE REGEX "/VTK/") # this requires cmake > 3.6
+  list(FILTER MY_SRC EXCLUDE REGEX "/VTK/") # this requires cmake > 3.6
+endif()
+if(NOT CUDA)
+  list(FILTER MY_SRC EXCLUDE REGEX ".*\\.cu") # this requires cmake > 3.6
 endif()
 
 # add the executable

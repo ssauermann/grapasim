@@ -1,5 +1,10 @@
-cmake_minimum_required(VERSION 3.6)
-project(GraPaSim)
+cmake_minimum_required(VERSION 3.10)
+set(CMAKE_C_COMPILER_WORKS 1)
+set(CMAKE_CXX_COMPILER_WORKS 1)
+set(CMAKE_CUDA_COMPILER_WORKS 1)
+
+
+project(GraPaSim CXX)
 
 set( CMAKE_VERBOSE_MAKEFILE ON )
 set(CMAKE_CXX_STANDARD 17)
@@ -22,6 +27,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules/)
 include(vectorization)
 # include OpenMP module
 include(OpenMP)
+include(cuda)
 # include options module
 #include(options)
 # include mpi module
