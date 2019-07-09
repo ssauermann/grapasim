@@ -17,14 +17,14 @@ file(GLOB_RECURSE MY_SRC
 
 # if vtk is disabled, remove everything in a vtk directory
 if(NOT ENABLE_VTK)
-    set (EXCLUDE_DIR "/VTK/")
-    foreach (TMP_PATH ${MY_SRC})
-        string (FIND ${TMP_PATH} ${EXCLUDE_DIR} EXCLUDE_DIR_FOUND)
-        if (NOT ${EXCLUDE_DIR_FOUND} EQUAL -1)
-            list (REMOVE_ITEM MY_SRC ${TMP_PATH})
-        endif ()
-    endforeach(TMP_PATH)
-    # list(FILTER MY_SRC EXCLUDE REGEX "/VTK/") # this requires cmake > 3.6
+ #   set (EXCLUDE_DIR "/VTK/")
+ #   foreach (TMP_PATH ${MY_SRC})
+ #       string (FIND ${TMP_PATH} ${EXCLUDE_DIR} EXCLUDE_DIR_FOUND)
+ #       if (NOT ${EXCLUDE_DIR_FOUND} EQUAL -1)
+ #           list (REMOVE_ITEM MY_SRC ${TMP_PATH})
+ #       endif ()
+ #   endforeach(TMP_PATH)
+ list(FILTER MY_SRC EXCLUDE REGEX "/VTK/") # this requires cmake > 3.6
 endif()
 
 # add the executable
