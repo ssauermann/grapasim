@@ -1,5 +1,4 @@
 #include "Leapfrog.h"
-PRECISION Leapfrog::stepSize = 1e-5;
 
 void Leapfrog::doStepPreForce(Particle &particle) {
     // Half-step velocity to get v(t+0.5)

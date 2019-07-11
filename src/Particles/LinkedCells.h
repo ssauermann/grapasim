@@ -14,13 +14,8 @@
 #include <Integration/Leapfrog.h>
 
 class LinkedCells {
-
-#ifdef ENABLE_CUDA
-    Particle* device_particles;
-#endif
-
+protected:
     std::vector<Particle> particles;
-
 
     std::vector<Particle> haloParticles = std::vector<Particle>();
     Domain domain;
@@ -127,20 +122,14 @@ public:
     }
 
     void updateContainer();
-
-    void iteratePairs();
-
-    void iterate();
-
-    void preStep();
-    void postStep();
-
     void output(const std::function<void(Particle &)> &, bool includeHalo=false);
-
     int particleCount(bool includeVirtual);
 
-    void prepareComputation();
-
-    void finalizeComputation();
+    virtual void iteratePairs() = 0;
+    virtual void iterate() = 0;
+    virtual void preStep() = 0;
+    virtual void postStep() = 0;
+    virtual void prepareComputation() = 0;
+    virtual void finalizeComputation() = 0;
 };
 

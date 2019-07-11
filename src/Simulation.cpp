@@ -7,7 +7,7 @@
 #include "Simulation.h"
 #include "Integration/Leapfrog.h"
 #include "Particles/Particle.h"
-#include "Particles/LinkedCells.h"
+#include "Particles/LinkedCellsImpl.h"
 #include "Forces/SpringForce.h"
 #include "Output/XYZWriter.h"
 
@@ -38,7 +38,7 @@ void Simulation::run() {
     std::string filename = "sim";
     auto output = VTKWriter(filename, 0);
 
-    LinkedCells particleContainer(domain, cellSizeTarget, particles);
+    LinkedCellsImpl particleContainer(domain, cellSizeTarget, particles);
 
     auto outputW = std::bind(&OutputWriter::plotParticle, std::ref(output), std::placeholders::_1);
 

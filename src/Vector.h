@@ -7,27 +7,27 @@ struct Vector {
     PRECISION y;
     PRECISION z;
 
-     PRECISION l2norm();
+    DEVICE_HOST PRECISION l2norm();
 
-     friend PRECISION operator*(const Vector& lhs, const Vector& rhs);
+    DEVICE_HOST friend PRECISION operator*(const Vector& lhs, const Vector& rhs);
 
-     Vector& operator+=(const Vector& rhs);
+    DEVICE_HOST Vector& operator+=(const Vector& rhs);
 
-     Vector& operator-=(const Vector& rhs);
+    DEVICE_HOST Vector& operator-=(const Vector& rhs);
 
-     Vector& operator*=(PRECISION rhs);
+    DEVICE_HOST Vector& operator*=(PRECISION rhs);
 
-     Vector& operator/=(PRECISION rhs);
+    DEVICE_HOST Vector& operator/=(PRECISION rhs);
 
 };
 
 
- Vector operator+(Vector lhs, const Vector& rhs);
+DEVICE_HOST Vector operator+(Vector lhs, const Vector& rhs);
 
- Vector operator-(Vector lhs, const Vector& rhs);
+DEVICE_HOST Vector operator-(Vector lhs, const Vector& rhs);
 
- Vector operator*(Vector lhs, PRECISION rhs);
+DEVICE_HOST Vector operator*(Vector lhs, PRECISION rhs);
 
- Vector operator/(Vector lhs, PRECISION rhs);
+DEVICE_HOST Vector operator/(Vector lhs, PRECISION rhs);
 
- Vector operator*(PRECISION lhs, Vector rhs);
+DEVICE_HOST Vector operator*(PRECISION lhs, Vector rhs);
