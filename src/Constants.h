@@ -1,5 +1,8 @@
 #pragma once
 
+#include "HappyClion.h"
+
+
 #define DIMENSIONS 3
 
 #ifdef __CUDACC__
@@ -18,3 +21,4 @@
 // #define DOREVERSE
 
 typedef float PRECISION;
+

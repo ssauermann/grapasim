@@ -4,6 +4,8 @@
 
 class LinkedCellsImpl : public LinkedCells {
 
+    Particle *device_Particles = nullptr;
+
 public:
     explicit LinkedCellsImpl(Domain &domain, Vector cellSizeTarget, std::vector<Particle> &particles)
     : LinkedCells(domain, cellSizeTarget, particles) {}
