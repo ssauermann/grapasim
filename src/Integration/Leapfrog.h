@@ -3,7 +3,7 @@
 #include <Particles/Particle.h>
 #include "Constants.h"
 
-static class Leapfrog {
+class Leapfrog {
 
 public:
     static PRECISION stepSize;
