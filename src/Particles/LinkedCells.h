@@ -4,11 +4,16 @@
 #include <tuple>
 #include <iostream>
 #include <cassert>
+#include <vector>
+#include <Forces/SpringForce.h>
+#include "Vector.h"
 
-#include "ParticleContainer.h"
 #include "IntVector.h"
+#include "Particle.h"
+#include <functional>
+#include <Integration/Leapfrog.h>
 
-class LinkedCells : public ParticleContainer {
+class LinkedCells {
 
     std::vector<Particle> particles;
     std::vector<Particle> haloParticles = std::vector<Particle>();
@@ -114,14 +119,21 @@ public:
         return pairs;
     }
 
-    void updateContainer() override;
+    void updateContainer();
 
-    void iteratePairs(const std::function<void(Particle &, Particle &)> &function) override;
+    void iteratePairs();
 
-    void iterate(const std::function<void(Particle &)> &function) override;
+    void iterate();
 
-    void iterateAll(const std::function<void(Particle &)> &) override;
+    void preStep();
+    void postStep();
 
-    int particleCount(bool includeVirtual) override;
+    void output(const std::function<void(Particle &)> &, bool includeHalo=false);
+
+    int particleCount(bool includeVirtual);
+
+    void prepareComputation();
+
+    void finalizeComputation();
 };
 

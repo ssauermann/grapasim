@@ -1,6 +1,12 @@
 #include "LinkedCells.h"
+#ifdef ENABLE_CUDA
+#include "LinkedCells.cu"
+#endif
 
-void LinkedCells::iteratePairs(const std::function<void(Particle &, Particle &)> &function) {
+void LinkedCells::iteratePairs() {
+#ifdef ENABLE_CUDA
+
+#else
 #pragma omp parallel for schedule(dynamic, 1)
     for(auto it = this->inner.begin(); it < this->inner.end(); ++it){
         auto& cell = *it;
@@ -8,26 +14,46 @@ void LinkedCells::iteratePairs(const std::function<void(Particle &, Particle &)>
             for (Particle *p: cell->second) {
                 for (Particle *q: cells.at(cell->first + offset)->second) {
                     if(p != q) {
-                        function(*p, *q);
+                        SpringForce::interact(*p, *q);
                     }
                 }
             }
         }
     }
-
-    /* for (int i = 0; i < this->particles.size(); ++i) {
-         for (int j = 0; j < this->particles.size(); ++j) {
-             if (i != j) {
-                 function(this->particles.at(i), this->particles.at(j));
-             }
-         }
-     }*/
+#endif
 }
 
-void LinkedCells::iterate(const std::function<void(Particle &)> &function) {
+void LinkedCells::iterate() {
+#ifdef ENABLE_CUDA
+    int N = this->particles.size();
+
+
+  vec2,
+  vec1.data(),
+  numMoments * sizeof(double));
+
+    iterateKernel<<<(N + 511) / 512, 512>>>(N, particles);
+
+#else
 #pragma omp parallel for
     for (auto it = this->particles.begin(); it < this->particles.end(); ++it) {
-        function(*it);
+        SpringForce::calculate(*it);
+    }
+#endif
+}
+
+
+void  LinkedCells::preStep(){
+#pragma omp parallel for
+    for (auto it = this->particles.begin(); it < this->particles.end(); ++it) {
+        Leapfrog::doStepPreForce(*it);
+    }
+}
+
+void  LinkedCells::postStep(){
+#pragma omp parallel for
+    for (auto it = this->particles.begin(); it < this->particles.end(); ++it) {
+        Leapfrog::doStepPostForce(*it);
     }
 }
 
@@ -111,12 +137,14 @@ void LinkedCells::updateContainer() {
 
 }
 
-void LinkedCells::iterateAll(const std::function<void(Particle &)> &function) {
+void LinkedCells::output(const std::function<void(Particle &)> & function, bool includeHalo) {
     for (auto it = this->particles.begin(); it < this->particles.end(); ++it) {
         function(*it);
     }
-    for (auto it = this->haloParticles.begin(); it < this->haloParticles.end(); ++it) {
-        function(*it);
+    if(includeHalo) {
+        for (auto it = this->haloParticles.begin(); it < this->haloParticles.end(); ++it) {
+            function(*it);
+        }
     }
 }
 

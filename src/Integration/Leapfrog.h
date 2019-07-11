@@ -1,15 +1,27 @@
 #pragma once
 
-#include "Integrator.h"
+#include <Particles/Particle.h>
+#include "Constants.h"
 
-class Leapfrog : public Integrator {
-
+static class Leapfrog {
 
 public:
-    explicit Leapfrog(const PRECISION stepSize) : Integrator(stepSize) {}
+    static PRECISION stepSize;
 
-    void doStepPreForce(Particle &particle) override;
+    DEVICE static void doStepPreForce(Particle &particle){
+        // Half-step velocity to get v(t+0.5)
+        particle.v += 0.5 * stepSize * particle.F / particle.mass;
 
-    void doStepPostForce(Particle &particle) override;
+        // Update positions
+        particle.x += stepSize * particle.v;
+
+        particle.F = {0};
+    }
+
+    DEVICE static void doStepPostForce(Particle &particle){
+
+        // Half-step velocity to get v(t+1)
+        particle.v += 0.5 * stepSize * particle.F / particle.mass;
+    }
 
 };
