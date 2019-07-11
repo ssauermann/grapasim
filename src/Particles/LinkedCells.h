@@ -15,7 +15,13 @@
 
 class LinkedCells {
 
+#ifdef ENABLE_CUDA
+    Particle* device_particles;
+#endif
+
     std::vector<Particle> particles;
+
+
     std::vector<Particle> haloParticles = std::vector<Particle>();
     Domain domain;
     Vector cellSize = {0, 0, 0};

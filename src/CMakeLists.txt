@@ -29,13 +29,20 @@ if(NOT ENABLE_VTK)
 endif()
 if(NOT CUDA)
   list(FILTER MY_SRC EXCLUDE REGEX ".*\\.cu") # this requires cmake > 3.6
+
+  # add the executable
+  ADD_EXECUTABLE(GraPaSim
+          ${MY_SRC}
+          )
+else()
+    foreach(FILE ${MY_SRC})
+        set_source_files_properties( foo.cpp PROPERTIES CUDA_SOURCE_PROPERTY_FORMAT OBJ )
+    endforeach()
+    # add the executable
+    CUDA_ADD_EXECUTABLE(GraPaSim
+            ${MY_SRC}
+            )
 endif()
-
-# add the executable
-ADD_EXECUTABLE(GraPaSim
-        ${MY_SRC}
-        )
-
 # we just add all libraries here. If a library is not set, it will simply be ignored.
 TARGET_LINK_LIBRARIES(GraPaSim
         ${VTK_LIB}     # for VTK/xerces

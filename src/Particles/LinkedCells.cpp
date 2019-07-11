@@ -3,6 +3,31 @@
 #include "LinkedCells.cu"
 #endif
 
+void LinkedCells::prepareComputation() {
+#ifdef ENABLE_CUDA
+    int N = this->particles.size();
+// Copy host to device
+    HANDLE_ERROR( cudaMalloc( (void**)&this->device_particles, sizeof(Particle) ) );
+    HANDLE_ERROR( cudaMemcpy(
+            this->device_particles,
+            this->particles.data(),
+            sizeof(Particle) * N,
+            cudaMemcpyHostToDevice ) );
+#endif
+}
+
+void LinkedCells::finalizeComputation() {
+    int N = this->particles.size();
+#ifdef ENABLE_CUDA
+    HANDLE_ERROR( cudaMemcpy(
+            this->particles,
+            this->device_particles,
+            sizeof(Particle) * N,
+            cudaMemcpyDeviceToHost ) );
+    cudaFree(this->device_particles);
+#endif
+}
+
 void LinkedCells::iteratePairs() {
 #ifdef ENABLE_CUDA
 
