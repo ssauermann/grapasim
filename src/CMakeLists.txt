@@ -62,4 +62,5 @@ TARGET_LINK_LIBRARIES(GraPaSim
 
 if(CUDA)
     set_target_properties(GraPaSim PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+    target_compile_options(GraPaSim PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-std=c++11 -arch=sm_60 -gencode arch=compute_60,code=sm_60>)
 endif()

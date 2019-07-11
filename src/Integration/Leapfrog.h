@@ -6,10 +6,10 @@
 class Leapfrog {
 
 public:
-    static PRECISION stepSize;
+    static constexpr PRECISION stepSize = 1.25e-06;
 
-    static void doStepPreForce(Particle &particle);
+    DEVICE static void doStepPreForce(Particle &particle);
 
-    static void doStepPostForce(Particle &particle);
+    DEVICE static void doStepPostForce(Particle &particle);
 
 };

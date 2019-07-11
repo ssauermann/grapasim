@@ -13,8 +13,6 @@
 
 void Simulation::run() {
 
-    Leapfrog::stepSize = 1.25e-06;
-
     unsigned int simSteps = 300000;
     unsigned int writeFrequency = 1000;
 
