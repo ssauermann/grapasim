@@ -9,6 +9,8 @@
 #ifndef ENABLE_CUDA
 #error Set ENABLE_CUDA to enable a cuda build
 #endif
+
+#include "CudaError.h"
 #define DEVICE __device__
 #define DEVICE_HOST __device__ __host__
 #else

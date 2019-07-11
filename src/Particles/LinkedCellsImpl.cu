@@ -16,70 +16,65 @@ __global__ void iterateKernel(int N, Particle* particles){
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
     if(idx < N) {
-        SpringForce::calculate(particle[idx]);
+        SpringForce::calculate(particles[idx]);
     }
 }
 
 
-__global__ preKernel(int N, Particle* particles){
+__global__ void preKernel(int N, Particle* particles){
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
     if(idx < N) {
-        Leapfrog::doStepPreForce(particle[idx]);
+        Leapfrog::doStepPreForce(particles[idx]);
     }
 }
 
 
-__global__ postKernel(Particle* particles){
+__global__ void postKernel(int N, Particle* particles){
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
     if(idx < N) {
-        Leapfrog::doStepPostForce(particle[idx]);
+        Leapfrog::doStepPostForce(particles[idx]);
     }
 }
 
-void LinkedCells::prepareComputation() {
+void LinkedCellsImpl::prepareComputation() {
     int N = this->particles.size();
 // Copy host to device
-    HANDLE_ERROR( cudaMalloc( (void**)&this->device_particles, sizeof(Particle) ) );
-    HANDLE_ERROR( cudaMemcpy(
-            this->device_particles,
+    CudaSafeCall(  cudaMalloc( (void**)&this->deviceParticles, sizeof(Particle) ) );
+    CudaSafeCall(  cudaMemcpy(
+            this->deviceParticles,
             this->particles.data(),
             sizeof(Particle) * N,
             cudaMemcpyHostToDevice ) );
 }
 
-void LinkedCells::finalizeComputation() {
+void LinkedCellsImpl::finalizeComputation() {
     int N = this->particles.size();
-    HANDLE_ERROR( cudaMemcpy(
-            this->particles,
-            this->device_particles,
+    CudaSafeCall( cudaMemcpy(
+            this->particles.data(),
+            this->deviceParticles,
             sizeof(Particle) * N,
             cudaMemcpyDeviceToHost ) );
-    cudaFree(this->device_particles);
+    cudaFree(this->deviceParticles);
 }
 
-void LinkedCells::iteratePairs() {
+void LinkedCellsImpl::iteratePairs() {
 //TODO
 }
 
-void LinkedCells::iterate() {
+void LinkedCellsImpl::iterate() {
     int N = this->particles.size();
 
-
-  vec2,
-  vec1.data(),
-  numMoments * sizeof(double));
-
-    iterateKernel<<<(N + 511) / 512, 512>>>(N, particles);
+    iterateKernel<<<(N + 511) / 512, 512>>>(N, this->deviceParticles);
 
 }
 
 
-void  LinkedCells::preStep(){
+void  LinkedCellsImpl::preStep(){
 //TODO
 }
 
-void  LinkedCells::postStep(){
+void  LinkedCellsImpl::postStep(){
 //TODO
 }

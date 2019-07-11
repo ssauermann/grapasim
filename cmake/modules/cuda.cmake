@@ -4,6 +4,7 @@ if (CUDA)
     set(CMAKE_CUDA_COMPILER_WORKS ON)
     message(STATUS "CUDA enabled.")
     enable_language(CUDA)
+    find_package(CUDA)
    # set(CUDA_SEPARABLE_COMPILATION ON)
    # set(CUDA_NVCC_FLAGS
    #         ${CUDA_NVCC_FLAGS};

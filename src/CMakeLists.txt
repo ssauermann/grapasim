@@ -55,12 +55,16 @@ endif()
 ADD_EXECUTABLE(GraPaSim
         ${MY_SRC}
         )
+
 # we just add all libraries here. If a library is not set, it will simply be ignored.
 TARGET_LINK_LIBRARIES(GraPaSim
         ${VTK_LIB}     # for VTK/xerces
+        ${CUDA_LIBRARIES}
         )
 
 if(CUDA)
+    # set_target_properties(GraPaSim PROPERTIES LINKER_LANGUAGE CUDA) # This does not work for the same reason as the sample linking fails
     set_target_properties(GraPaSim PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-    target_compile_options(GraPaSim PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-std=c++11 -arch=sm_60 -gencode arch=compute_60,code=sm_60>)
+    target_compile_options(GraPaSim PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-std=c++11>)# -arch=sm_60 -gencode arch=compute_60,code=sm_60>)
+    #target_link_options(GraPaSim PUBLIC -arch=sm_60 -gencode arch=compute_60,code=sm_60>)
 endif()

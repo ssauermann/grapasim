@@ -1,6 +1,6 @@
 // https://stackoverflow.com/a/46101718
 #pragma once
-#ifdef __JETBRAINS_IDE__
+#ifdef __CLION_IDE__
 #include "math.h"
 #define __CUDACC__ 1
 #define __host__
