@@ -20,20 +20,18 @@ void Simulation::run() {
 
     bool includeHaloInOutput = true;
 
-    auto force = SpringForce();
-
     Domain domain = {.x = std::make_pair(-0.1, 0.1), .y = std::make_pair(-0.1, 3), .z = std::make_pair(-1, 1)};
     Vector cellSizeTarget = {0.01, 0.01, 1};
     std::vector<Particle> particles;
 
-    auto generator = SphereGenerator(3);
+    SphereGenerator generator(3);
     generator.mass = 0.1;
     generator.mesh = 0.0101;
     generator.dimensions = 2;
     generator.size = 0.005; //0.0005;
 
     generator.generate(particles);
-    auto mwb = MaxwellBoltzmannDistribution(0.001, 2);
+    MaxwellBoltzmannDistribution mwb(0.001, 2);
     for (auto &p: particles) {
         // p.v.y = -5;
         mwb.apply(p);
@@ -42,7 +40,7 @@ void Simulation::run() {
     std::string filename = "sim";
     auto output = VTKWriter(filename, 0);
 
-    auto particleContainer = LinkedCells(domain, cellSizeTarget, particles);
+    LinkedCells particleContainer(domain, cellSizeTarget, particles);
 
     auto outputW = std::bind(&OutputWriter::plotParticle, std::ref(output), std::placeholders::_1);
 

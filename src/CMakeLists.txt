@@ -29,11 +29,22 @@ if(NOT ENABLE_VTK)
 endif()
 if(NOT CUDA)
   list(FILTER MY_SRC EXCLUDE REGEX ".*\\.cu") # this requires cmake > 3.6
+else()
+    foreach(FILE ${MY_SRC})
+        get_filename_component(FILE_EXT ${FILE} LAST_EXT)
 
-#else()
-    #foreach(FILE ${MY_SRC})
-#        set_source_files_properties( foo.cpp PROPERTIES CUDA_SOURCE_PROPERTY_FORMAT OBJ )
-    #endforeach()
+        if(FILE_EXT STREQUAL ".cpp")
+                get_filename_component(FILE_NAME ${FILE} NAME_WLE)
+                get_filename_component(FILE_DIR ${FILE} DIRECTORY)
+                if ("${FILE_DIR}/${FILE_NAME}.cu" IN_LIST MY_SRC)
+                    list(REMOVE_ITEM MY_SRC "${FILE}")
+                    message(STATUS "Removed ${FILE} in favor of ${FILE_DIR}/${FILE_NAME}.cu")
+                endif()
+            endif()
+
+#        message(STATUS "${FILE}")
+#        set_source_files_properties( ${FILE} PROPERTIES CUDA_SOURCE_PROPERTY_FORMAT OBJ )
+    endforeach()
     # add the executable
     #CUDA_ADD_EXECUTABLE(GraPaSim
      #       ${MY_SRC}
@@ -48,3 +59,7 @@ ADD_EXECUTABLE(GraPaSim
 TARGET_LINK_LIBRARIES(GraPaSim
         ${VTK_LIB}     # for VTK/xerces
         )
+
+if(CUDA)
+    set_target_properties(GraPaSim PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+endif()

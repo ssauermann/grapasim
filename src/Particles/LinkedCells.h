@@ -63,6 +63,7 @@ class LinkedCells {
 
 
 public:
+    LinkedCells(const LinkedCells&) = delete;
     explicit LinkedCells(Domain &domain, Vector cellSizeTarget, std::vector<Particle> &particles) : particles(
             particles), domain(domain) {
         // initialize cells

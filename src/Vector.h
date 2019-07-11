@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cmath>
 #include "Constants.h"
 
 struct Vector {
@@ -8,77 +7,27 @@ struct Vector {
     PRECISION y;
     PRECISION z;
 
-    DEVICE PRECISION l2norm() {
-        return sqrt((*this)*(*this));
-    }
+    PRECISION l2norm();
 
-    DEVICE friend PRECISION operator*(const Vector& lhs, const Vector& rhs)
-    {
-        PRECISION sum = 0;
+    friend PRECISION operator*(const Vector& lhs, const Vector& rhs);
 
-        sum += lhs.x * rhs.x;
-        sum += lhs.y * rhs.y;
-        sum += lhs.z * rhs.z;
+    Vector& operator+=(const Vector& rhs);
 
-        return sum;
-    }
+    Vector& operator-=(const Vector& rhs);
 
-    DEVICE Vector& operator+=(const Vector& rhs){
-        x += rhs.x;
-        y += rhs.y;
-        z += rhs.z;
-        return *this;
-    }
+    Vector& operator*=(PRECISION rhs);
 
-    DEVICE Vector& operator-=(const Vector& rhs){
-        x -= rhs.x;
-        y -= rhs.y;
-        z -= rhs.z;
-        return *this;
-    }
-
-    DEVICE Vector& operator*=(const PRECISION rhs){
-        x *= rhs;
-        y *= rhs;
-        z *= rhs;
-        return *this;
-    }
-
-    DEVICE Vector& operator/=(const PRECISION rhs){
-        x /= rhs;
-        y /= rhs;
-        z /= rhs;
-        return *this;
-    }
+    Vector& operator/=(PRECISION rhs);
 
 };
 
 
-DEVICE inline Vector operator+(Vector lhs, const Vector& rhs)
-{
-    lhs += rhs;
-    return lhs;
-}
+Vector operator+(Vector lhs, const Vector& rhs);
 
-DEVICE inline Vector operator-(Vector lhs, const Vector& rhs)
-{
-    lhs -= rhs;
-    return lhs;
-}
+Vector operator-(Vector lhs, const Vector& rhs);
 
-DEVICE inline Vector operator*(Vector lhs, const PRECISION rhs)
-{
-    lhs *= rhs;
-    return lhs;
-}
+Vector operator*(Vector lhs, PRECISION rhs);
 
-DEVICE inline Vector operator/(Vector lhs, const PRECISION rhs)
-{
-    lhs /= rhs;
-    return lhs;
-}
+Vector operator/(Vector lhs, PRECISION rhs);
 
-DEVICE inline Vector operator*(const PRECISION lhs, Vector rhs){
-    rhs *= lhs;
-    return rhs;
-}
+Vector operator*(PRECISION lhs, Vector rhs);

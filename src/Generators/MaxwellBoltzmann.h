@@ -6,7 +6,7 @@
 #include <random>
 
 class MaxwellBoltzmannDistribution {
-    std::random_device rd{};
+    std::random_device rd;
     std::seed_seq ssq{rd()};
     std::mt19937 gen{rd()};
     std::normal_distribution<> gauss{0, 1};
@@ -14,7 +14,7 @@ class MaxwellBoltzmannDistribution {
     double factor;
     int dimensions;
 public:
-    MaxwellBoltzmannDistribution(PRECISION factor, int dimensions) : factor(factor), dimensions(dimensions) {
+    explicit MaxwellBoltzmannDistribution(PRECISION factor, int dimensions) : factor(factor), dimensions(dimensions) {
 
     }
 

@@ -1,6 +1,6 @@
 #include "LinkedCells.h"
 #ifdef ENABLE_CUDA
-#include "LinkedCells.cu"
+//#include "LinkedCells_.cu"
 #endif
 
 void LinkedCells::prepareComputation() {

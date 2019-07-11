@@ -7,7 +7,7 @@
 struct Particle {
 
     Particle(Vector x, Vector v, PRECISION mass, PRECISION radius, unsigned long id, int type) :
-            x(x), F({0}) , v(v), mass(mass), radius(radius), id(id), type(type){;
+            x(x), F({0}) , v(v), mass(mass), radius(radius), id(id), type(type){
     }
 
     Vector x;

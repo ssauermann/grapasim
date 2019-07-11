@@ -1,7 +1,8 @@
 #include "Leapfrog.h"
+
 PRECISION Leapfrog::stepSize = 1e-5;
 
-void Leapfrog::doStepPreForce(Particle &particle) {
+__device__ void Leapfrog::doStepPreForce(Particle &particle) {
     // Half-step velocity to get v(t+0.5)
     particle.v += 0.5 * stepSize * particle.F / particle.mass;
 
@@ -11,7 +12,7 @@ void Leapfrog::doStepPreForce(Particle &particle) {
     particle.F = {0};
 }
 
-void Leapfrog::doStepPostForce(Particle &particle) {
+__device__ void Leapfrog::doStepPostForce(Particle &particle) {
 
     // Half-step velocity to get v(t+1)
     particle.v += 0.5 * stepSize * particle.F / particle.mass;

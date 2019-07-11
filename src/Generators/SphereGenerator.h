@@ -20,6 +20,7 @@ public:
 
     explicit SphereGenerator(unsigned int radius) : radius(radius) {
     }
+    SphereGenerator(const SphereGenerator&) = delete;
 
     void generate(std::vector<Particle> &particles) override;
 

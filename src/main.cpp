@@ -4,7 +4,7 @@
 int main() {
     std::cout << "Hello from GraPaSim" << std::endl;
 
-    auto sim = Simulation();
+    Simulation sim;
 
     sim.run();
 
