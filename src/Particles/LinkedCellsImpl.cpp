@@ -11,12 +11,27 @@ void LinkedCellsImpl::finalizeComputation() {
 
 void LinkedCellsImpl::iteratePairs() {
 #pragma omp parallel for schedule(dynamic, 1)
-    for(auto it = this->inner.begin(); it < this->inner.end(); ++it){
-        auto& cell = *it;
+    for (auto it = this->inner.begin(); it < this->inner.end(); ++it) {
+        auto &cell = this->cells.at(*it);
         for (int offset: pairOffsets) {
-            for (Particle *p: cell->second) {
-                for (Particle *q: cells.at(cell->first + offset)->second) {
-                    if(p != q) {
+            for (int i=0; i<cell.size; ++i) {
+                auto pIdx = cell.data[i];
+                auto& otherCell = cells.at(*it + offset);
+                for (int j=0; j<otherCell.size; ++j) {
+                    auto qIdx = otherCell.data[j];
+                    if (pIdx != qIdx) {
+                        Particle *p;
+                        Particle *q;
+                        if (pIdx >= 0) {
+                            p = &this->particles[pIdx];
+                        } else {
+                            p = &this->haloParticles[-pIdx-1];
+                        }
+                        if (qIdx >= 0) {
+                            q = &this->particles[qIdx];
+                        } else {
+                            q = &this->haloParticles[-qIdx-1];
+                        }
                         SpringForce::interact(*p, *q);
                     }
                 }
@@ -33,16 +48,24 @@ void LinkedCellsImpl::iterate() {
 }
 
 
-void  LinkedCellsImpl::preStep(){
+void LinkedCellsImpl::preStep() {
 #pragma omp parallel for
     for (auto it = this->particles.begin(); it < this->particles.end(); ++it) {
         Leapfrog::doStepPreForce(*it);
     }
 }
 
-void  LinkedCellsImpl::postStep(){
+void LinkedCellsImpl::postStep() {
 #pragma omp parallel for
     for (auto it = this->particles.begin(); it < this->particles.end(); ++it) {
         Leapfrog::doStepPostForce(*it);
     }
 }
+
+LinkedCellsImpl::LinkedCellsImpl(Domain &domain, Vector cellSizeTarget, std::vector<Particle> &particles) : LinkedCells(
+        domain, cellSizeTarget, particles) {
+    // Nothing to setup
+}
+
+
+LinkedCellsImpl::~LinkedCellsImpl() = default;

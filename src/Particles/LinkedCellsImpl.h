@@ -5,10 +5,15 @@
 class LinkedCellsImpl : public LinkedCells {
 
     Particle *deviceParticles = nullptr;
+    Particle *deviceHaloParticles = nullptr;
+    int *deviceInner = nullptr;
+    int *devicePairOffsets = nullptr;
+    Cell *deviceCells = nullptr;
 
 public:
-    explicit LinkedCellsImpl(Domain &domain, Vector cellSizeTarget, std::vector<Particle> &particles)
-    : LinkedCells(domain, cellSizeTarget, particles) {}
+    explicit LinkedCellsImpl(Domain &domain, Vector cellSizeTarget, std::vector<Particle> &particles);
+
+    ~LinkedCellsImpl();
 
     void iteratePairs() override;
     void iterate() override;

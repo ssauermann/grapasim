@@ -13,12 +13,12 @@
 
 void Simulation::run() {
 
-    unsigned int simSteps = 300000;
+    unsigned int simSteps = 100000;
     unsigned int writeFrequency = 1000;
 
     bool includeHaloInOutput = true;
 
-    Domain domain = {.x = std::make_pair(-0.1, 0.1), .y = std::make_pair(-0.1, 3), .z = std::make_pair(-1, 1)};
+    Domain domain = {.x = std::make_pair(-0.1, 0.1), .y = std::make_pair(0, 1), .z = std::make_pair(-1, 1)};
     Vector cellSizeTarget = {0.01, 0.01, 1};
     std::vector<Particle> particles;
 
@@ -27,6 +27,7 @@ void Simulation::run() {
     generator.mesh = 0.0101;
     generator.dimensions = 2;
     generator.size = 0.005; //0.0005;
+    generator.center.y = 0.035;
 
     generator.generate(particles);
     MaxwellBoltzmannDistribution mwb(0.001, 2);
@@ -42,7 +43,7 @@ void Simulation::run() {
 
     auto outputW = std::bind(&OutputWriter::plotParticle, std::ref(output), std::placeholders::_1);
 
-    std::cout << "Simulating " << particles.size() << " particles\n";
+    std::cout << "Simulating " << particles.size() << " particles for " << simSteps << " time-steps\n";
     //Calculate starting forces
     particleContainer.updateContainer();
     particleContainer.prepareComputation();

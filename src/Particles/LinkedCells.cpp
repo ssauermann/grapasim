@@ -3,22 +3,32 @@
 void LinkedCells::updateContainer() {
     // Clear cells
     for (auto &cell : this->cells) {
-        cell->second.clear();
+        cell.size = 0;
     }
     haloParticles.clear();
 
     // Re-sort particles into cells
-    for (auto &p : this->particles) {
-        auto idx = to1dIndex(cellIndex(p));
-        cells.at(idx)->second.push_back(&p);
+    for (int i = 0; i < this->particles.size(); ++i) {
+        auto &p = this->particles[i];
+        const auto &cellIdx = cellIndex(p);
+
+        assert(cellIdx.x > 0 && cellIdx.x < numCells.x - 1);
+        assert(cellIdx.y > 0 && cellIdx.y < numCells.y - 1);
+        assert(cellIdx.z > 0 && cellIdx.z < numCells.z - 1);
+
+        auto idx = to1dIndex(cellIdx);
+        cells.at(idx).pushBack(i);
     }
 
     // Mirror boundary particles into halo cells for reflecting boundary
     // Updating positions and velocities is enough as forces do not matter
     for (auto &bc : this->boundary) {
-        for (Particle *p: bc->second) {
+        auto &cell = this->cells.at(bc);
+        for (int i = 0; i < cell.size; ++i) {
+            int pIdx = cell.data[i];
+            Particle *p = &this->particles[pIdx];
             // if is boundary in +x
-            if (p->x.x > domain.x.second - cellSize.x + 1e-5 ) {
+            if (p->x.x > domain.x.second - cellSize.x + 1e-5) {
                 Particle copy = *p;
                 copy.type = -1;
                 copy.x.x += 2 * (domain.x.second - p->x.x);
@@ -73,18 +83,19 @@ void LinkedCells::updateContainer() {
     }
 
     // Re-sort halo particles into cells
-    for (auto &p : this->haloParticles) {
+    for (int pIdx = 0; pIdx < this->haloParticles.size(); ++pIdx) {
+        Particle &p = this->haloParticles[pIdx];
         auto idx = to1dIndex(cellIndex(p));
-        cells.at(idx)->second.push_back(&p);
+        cells.at(idx).pushBack(-pIdx-1);
     }
 
 }
 
-void LinkedCells::output(const std::function<void(Particle &)> & function, bool includeHalo) {
+void LinkedCells::output(const std::function<void(Particle &)> &function, bool includeHalo) {
     for (auto it = this->particles.begin(); it < this->particles.end(); ++it) {
         function(*it);
     }
-    if(includeHalo) {
+    if (includeHalo) {
         for (auto it = this->haloParticles.begin(); it < this->haloParticles.end(); ++it) {
             function(*it);
         }

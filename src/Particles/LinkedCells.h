@@ -13,6 +13,18 @@
 #include <functional>
 #include <Integration/Leapfrog.h>
 
+#define MAXCELLPARTICLE 8
+
+struct Cell {
+    int size = 0;
+    int data[MAXCELLPARTICLE] = {0};
+
+    void pushBack(int x) {
+        assert(size < MAXCELLPARTICLE - 1);
+        data[size++] = x;
+    }
+};
+
 class LinkedCells {
 protected:
     std::vector<Particle> particles;
@@ -22,12 +34,13 @@ protected:
     Vector cellSize = {0, 0, 0};
     IntVector numCells = {0, 0, 0};
 
-    typedef std::pair<int, std::vector<Particle *>> Cell;
+    //typedef std::vector<int> Cell;
 
-    std::vector<Cell *> cells;
-    std::vector<Cell *> halo;
-    std::vector<Cell *> boundary;
-    std::vector<Cell *> inner;
+
+    std::vector<Cell> cells;
+    std::vector<int> halo;
+    std::vector<int> boundary;
+    std::vector<int> inner;
 
     std::vector<int> pairOffsets;
 
@@ -40,13 +53,21 @@ protected:
 
     IntVector cellIndex(Particle &p) {
         IntVector idx = {0};
-        idx.x = (int) ((p.x.x - domain.x.first) / cellSize.x) + 1;
-        idx.y = (int) ((p.x.y - domain.y.first) / cellSize.y) + 1;
-        idx.z = (int) ((p.x.z - domain.z.first) / cellSize.z) + 1;
+        idx.x = (int) ((p.x.x - domain.x.first) / cellSize.x + 1);
+        idx.y = (int) ((p.x.y - domain.y.first) / cellSize.y + 1);
+        idx.z = (int) ((p.x.z - domain.z.first) / cellSize.z + 1);
 
-        assert(idx.x >= 0 && idx.x < numCells.x);
-        assert(idx.y >= 0 && idx.y < numCells.y);
-        assert(idx.z >= 0 && idx.z < numCells.z);
+#ifndef NDEBUG
+        if (p.type >= 0) {
+            assert(idx.x > 0 && idx.x < numCells.x - 1);
+            assert(idx.y > 0 && idx.y < numCells.y - 1);
+            assert(idx.z > 0 && idx.z < numCells.z - 1);
+        } else {
+            assert(idx.x == 0 || idx.x == numCells.x - 1 ||
+                   idx.y == 0 || idx.y == numCells.y - 1 ||
+                   idx.z == 0 || idx.z == numCells.z - 1);
+        }
+#endif
 
         return idx;
     }
@@ -58,7 +79,10 @@ protected:
 
 
 public:
-    LinkedCells(const LinkedCells&) = delete;
+
+
+    LinkedCells(const LinkedCells &) = delete;
+
     explicit LinkedCells(Domain &domain, Vector cellSizeTarget, std::vector<Particle> &particles) : particles(
             particles), domain(domain) {
         // initialize cells
@@ -69,22 +93,23 @@ public:
         for (int i = 0; i < numCells.x; ++i) {
             for (int j = 0; j < numCells.y; ++j) {
                 for (int k = 0; k < numCells.z; ++k) {
-                    auto cell = new std::pair<int, std::vector<Particle *>>(0, std::vector<Particle *>());
-                    cell->first = to1dIndex({i, j, k});
+                    Cell cell{};
+                    int idx = this->cells.size();
+                    assert(to1dIndex({i, j, k}) == idx);
                     this->cells.push_back(cell);
 
                     // Test if halo block and add to halo subvector
                     if (i == 0 || j == 0 || k == 0 ||
                         i == (numCells.x - 1) || j == (numCells.y - 1) || k == (numCells.z - 1)) {
-                        halo.push_back(cell);
+                        halo.push_back(idx);
                     } else {
                         // Test if boundary block and add to boundary subvector
                         if (i == 1 || j == 1 || k == 1 ||
                             i == (numCells.x - 2) || j == (numCells.y - 2) || k == (numCells.z - 2)) {
-                            boundary.push_back(cell);
+                            boundary.push_back(idx);
                         }
                         // Inner cell == non halo cell
-                        inner.push_back(cell);
+                        inner.push_back(idx);
 
                     }
 
@@ -100,10 +125,7 @@ public:
         // Sanity check
         for (auto &p: particles) {
             // Assert that no particle is outside of the domain (not even in halo)
-            auto idx = cellIndex(p);
-            assert(idx.x > 0 && idx.x < numCells.x - 1);
-            assert(idx.y > 0 && idx.y < numCells.y - 1);
-            assert(idx.z > 0 && idx.z < numCells.z - 1);
+            cellIndex(p); //happens in here
         }
 
     }
@@ -122,14 +144,21 @@ public:
     }
 
     void updateContainer();
-    void output(const std::function<void(Particle &)> &, bool includeHalo=false);
+
+    void output(const std::function<void(Particle &)> &, bool includeHalo = false);
+
     int particleCount(bool includeVirtual);
 
     virtual void iteratePairs() = 0;
+
     virtual void iterate() = 0;
+
     virtual void preStep() = 0;
+
     virtual void postStep() = 0;
+
     virtual void prepareComputation() = 0;
+
     virtual void finalizeComputation() = 0;
 };
 
