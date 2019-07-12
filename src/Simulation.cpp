@@ -27,7 +27,7 @@ void Simulation::run() {
     generator.mesh = 0.0101;
     generator.dimensions = 2;
     generator.size = 0.005; //0.0005;
-    generator.center.y = 0.035;
+    generator.center.y = 0.05;
 
     generator.generate(particles);
     MaxwellBoltzmannDistribution mwb(0.001, 2);

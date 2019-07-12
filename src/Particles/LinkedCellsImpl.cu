@@ -22,7 +22,7 @@ calculateKernel(Cell *cells, Particle *particles, Particle *haloParticles, int *
     int cellIdx = inner[blockIdx.x];
     auto &cell = cells[cellIdx];
     int offset = pairOffsets[blockIdx.y];
-    auto &otherCell = cells[blockIdx.x + offset];
+    auto &otherCell = cells[cellIdx + offset];
 
     int idx = threadIdx.x;
     int idy = threadIdx.y;
@@ -78,7 +78,7 @@ void LinkedCellsImpl::prepareComputation() {
 
     int N = this->cells.size();
     // Copy cells to device
-    CudaSafeCall(cudaMemcpy(this->deviceCells, this->cells.data(), sizeof(int) * N, cudaMemcpyHostToDevice));
+    CudaSafeCall(cudaMemcpy(this->deviceCells, this->cells.data(), sizeof(Cell) * N, cudaMemcpyHostToDevice));
 
     N = this->haloParticles.size();
     // Copy halo particles to device
