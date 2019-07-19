@@ -10,7 +10,7 @@ void LinkedCellsImpl::finalizeComputation() {
 }
 
 void LinkedCellsImpl::iteratePairs() {
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for // schedule(dynamic, 1)
     for (auto it = this->inner.begin(); it < this->inner.end(); ++it) {
         auto &cell = this->cells.at(*it);
         for (int offset: pairOffsets) {

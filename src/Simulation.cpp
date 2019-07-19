@@ -18,16 +18,16 @@ void Simulation::run() {
 
     bool includeHaloInOutput = true;
 
-    Domain domain = {.x = std::make_pair(-0.1, 0.1), .y = std::make_pair(0, 1), .z = std::make_pair(-1, 1)};
-    Vector cellSizeTarget = {0.01, 0.01, 1};
+    Domain domain = {.x = std::make_pair(-0.04, 0.04), .y = std::make_pair(0, 0.2), .z = std::make_pair(-1, 1)};
+    Vector cellSizeTarget = {0.001, 0.001, 1};
     std::vector<Particle> particles;
 
-    SphereGenerator generator(3);
-    generator.mass = 0.1;
-    generator.mesh = 0.0101;
+    SphereGenerator generator(30);
+    generator.mass = 0.001;
+    generator.mesh = 0.0011;
     generator.dimensions = 2;
-    generator.size = 0.005; //0.0005;
-    generator.center.y = 0.05;
+    generator.size = 0.0005; //0.0005;
+    generator.center.y = 0.04;
 
     generator.generate(particles);
     MaxwellBoltzmannDistribution mwb(0.001, 2);
@@ -57,6 +57,7 @@ void Simulation::run() {
 
 
     for (unsigned int step = 1; step <= simSteps; ++step) {
+        std::cout << "Step: " << step << "\n";
 
         particleContainer.updateContainer();
         particleContainer.prepareComputation();
