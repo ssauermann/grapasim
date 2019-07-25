@@ -225,17 +225,21 @@ LinkedCellsImpl::LinkedCellsImpl(Domain &domain, Vector cellSizeTarget, std::vec
     numInner.z -= 2;
 
     if(numInner.z == 1){
+        std::cout << "Init 2D Hilbert\n";
         this->decomp = new Hilbert(inner, numInner);
     } else {
+        std::cout << "Init 3D Hilbert\n";
         this->decomp = new Hilbert3D(inner, numInner);
     }
 
 
     for (int devId = 0; devId < GPU_N; ++devId) {
+        std::cout << "Init stream " << devId << "\n";
         CudaSafeCall(cudaSetDevice(devId));
         CudaSafeCall(cudaStreamCreate(&this->layout[devId].stream));
 
         // Copy particles to device
+        std::cout << "Copy particles\n";
         int N = this->particles.size();
         CudaSafeCall(cudaMalloc((void **) &this->layout[devId].deviceParticles, sizeof(Particle) * N));
         CudaSafeCall(
@@ -244,6 +248,7 @@ LinkedCellsImpl::LinkedCellsImpl(Domain &domain, Vector cellSizeTarget, std::vec
 
         CudaSafeCall(cudaMallocHost((void **) &this->layout[devId].resultParticles, sizeof(Particle) * N));
 
+        std::cout << "Copy inner\n";
         N = this->inner.size();
         // Copy inner cell indices to device
         CudaSafeCall(cudaMalloc((void **) &this->layout[devId].deviceInner, sizeof(int) * N));
@@ -251,6 +256,7 @@ LinkedCellsImpl::LinkedCellsImpl(Domain &domain, Vector cellSizeTarget, std::vec
                                 cudaMemcpyHostToDevice));
         this->layout[devId].size = N;
 
+        std::cout << "Copy offsets\n";
         N = this->pairOffsets.size();
         // Copy pairOffsets to device
         CudaSafeCall(cudaMalloc((void **) &this->layout[devId].devicePairOffsets, sizeof(int) * N));
@@ -259,6 +265,7 @@ LinkedCellsImpl::LinkedCellsImpl(Domain &domain, Vector cellSizeTarget, std::vec
                            cudaMemcpyHostToDevice));
 
 
+        std::cout << "Malloc cells\n";
         CudaSafeCall(cudaMalloc((void **) &this->layout[devId].deviceCells, sizeof(Cell) * this->cells.size()));
     }
 }

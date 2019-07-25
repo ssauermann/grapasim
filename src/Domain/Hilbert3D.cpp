@@ -119,6 +119,8 @@ void Hilbert3D::_zxy(int depth) {
         yzx
         down
         zXY
+        right
+        zXY
         up
         YZx
         front
