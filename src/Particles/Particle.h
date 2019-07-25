@@ -10,6 +10,7 @@ struct Particle {
             x(x), F({0}) , v(v), mass(mass), radius(radius), id(id), type(type){
     }
 
+
     Vector x;
 
     Vector F;
@@ -23,5 +24,7 @@ struct Particle {
     int type;
 
     unsigned long id;
+
+    bool modified = false;
 
 };

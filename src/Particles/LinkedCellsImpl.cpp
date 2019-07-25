@@ -1,5 +1,8 @@
 #include "LinkedCellsImpl.h"
 
+struct GPULayout {
+
+};
 
 void LinkedCellsImpl::prepareComputation() {
     // Nothing to prepare
@@ -69,3 +72,7 @@ LinkedCellsImpl::LinkedCellsImpl(Domain &domain, Vector cellSizeTarget, std::vec
 
 
 LinkedCellsImpl::~LinkedCellsImpl() = default;
+
+void LinkedCellsImpl::updateDecomp() {
+    // No decomposition for CPU variant
+}

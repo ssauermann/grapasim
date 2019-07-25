@@ -1,6 +1,8 @@
 #include "LinkedCellsImpl.h"
 
 #include "Integration/Leapfrog.h"
+#include <cmath>
+
 /*
 __device__ void calculateKernelInner(int NA, int NB, Particle *cellA, Particle *cellB) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -15,6 +17,17 @@ __device__ void calculateKernelInner(int NA, int NB, Particle *cellA, Particle *
         }
     }
 }*/
+
+struct GPULayout {
+    Particle *deviceParticles = nullptr;
+    Particle *deviceHaloParticles = nullptr;
+    int *deviceInner = nullptr;
+    int *devicePairOffsets = nullptr;
+    Cell *deviceCells = nullptr;
+    cudaStream_t stream;
+    int size = 0;
+    Particle *resultParticles = nullptr;
+};
 
 __global__ void
 calculateKernel(Cell *cells, Particle *particles, Particle *haloParticles, int *inner, int *pairOffsets) {
@@ -35,136 +48,236 @@ calculateKernel(Cell *cells, Particle *particles, Particle *haloParticles, int *
             if (pi >= 0) {
                 p = &particles[pi];
             } else {
-                p = &haloParticles[-pi-1];
+                p = &haloParticles[-pi - 1];
             }
             if (qi >= 0) {
                 q = &particles[qi];
             } else {
-                q = &haloParticles[-qi-1];
+                q = &haloParticles[-qi - 1];
             }
             SpringForce::interact(*p, *q);
+            p->modified = true;
         }
     }
 
 }
 
-__global__ void iterateKernel(int N, Particle *particles) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+__global__ void iterateKernel(Cell *cells, Particle *particles, int *inner) {
 
-    if (idx < N) {
-        SpringForce::calculate(particles[idx]);
+    int cellIdx = inner[blockIdx.x];
+    auto &cell = cells[cellIdx];
+    int idx = threadIdx.x;
+
+    if (idx < cell.size) {
+        int pi = cell.data[idx];
+        SpringForce::calculate(particles[pi]);
     }
+
 }
 
 
-__global__ void preKernel(int N, Particle *particles) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+__global__ void preKernel(Cell *cells, Particle *particles, int *inner) {
 
-    if (idx < N) {
-        Leapfrog::doStepPreForce(particles[idx]);
+    int cellIdx = inner[blockIdx.x];
+    auto &cell = cells[cellIdx];
+    int idx = threadIdx.x;
+
+    if (idx < cell.size) {
+        int pi = cell.data[idx];
+        Leapfrog::doStepPreForce(particles[pi]);
     }
+
 }
 
 
-__global__ void postKernel(int N, Particle *particles) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+__global__ void postKernel(Cell *cells, Particle *particles, int *inner) {
+    int cellIdx = inner[blockIdx.x];
+    auto &cell = cells[cellIdx];
+    int idx = threadIdx.x;
 
-    if (idx < N) {
-        Leapfrog::doStepPostForce(particles[idx]);
+    if (idx < cell.size) {
+        int pi = cell.data[idx];
+        Leapfrog::doStepPostForce(particles[pi]);
     }
+
 }
 
 void LinkedCellsImpl::prepareComputation() {
+    for (int devId = 0; devId < GPU_N; ++devId) {
+        CudaSafeCall(cudaSetDevice(devId));
 
-    int N = this->cells.size();
-    // Copy cells to device
-    CudaSafeCall(cudaMemcpy(this->deviceCells, this->cells.data(), sizeof(Cell) * N, cudaMemcpyHostToDevice));
+        int N = this->cells.size();
+        CudaSafeCall(cudaMalloc((void **) &this->layout[devId].deviceHaloParticles, sizeof(Particle) * N));
 
-    N = this->haloParticles.size();
-    // Copy halo particles to device
-    CudaSafeCall(cudaMalloc((void **) &this->deviceHaloParticles, sizeof(Particle) * N));
-    CudaSafeCall(cudaMemcpy(this->deviceHaloParticles, this->haloParticles.data(), sizeof(Particle) * N,
-                            cudaMemcpyHostToDevice));
+        // Copy cells to device
+        CudaSafeCall(cudaMemcpyAsync(this->layout[devId].deviceCells, this->cells.data(), sizeof(Cell) * N,
+                                     cudaMemcpyHostToDevice, this->layout[devId].stream));
+        N = this->haloParticles.size();
+        // Copy halo particles to device
+        CudaSafeCall(cudaMemcpyAsync(this->layout[devId].deviceHaloParticles, this->haloParticles.data(),
+                                     sizeof(Particle) * N,
+                                     cudaMemcpyHostToDevice, this->layout[devId].stream));
 
-
+    }
 }
 
 void LinkedCellsImpl::finalizeComputation() {
-    int N = this->particles.size();
-// Copy particles from device to host to allow output to access the data
-    CudaSafeCall(cudaMemcpy(
-            this->particles.data(),
-            this->deviceParticles,
-            sizeof(Particle) * N,
-            cudaMemcpyDeviceToHost));
 
-    // Clear halos again
-    CudaSafeCall(cudaFree(this->deviceHaloParticles));
+    for (int devId = 0; devId < GPU_N; ++devId) {
+        CudaSafeCall(cudaSetDevice(devId));
+        int N = this->particles.size();
+        // Copy particles from device to host to allow output to access the data
+        CudaSafeCall(cudaMemcpyAsync(
+                //this->particles.data(),
+                this->layout[devId].resultParticles,
+                this->layout[devId].deviceParticles,
+                sizeof(Particle) * N,
+                cudaMemcpyDeviceToHost, this->layout[devId].stream));
+
+        //Wait for all operations to finish
+        cudaStreamSynchronize(this->layout[devId].stream);
+
+        // Clear halos again
+        CudaSafeCall(cudaFree(this->layout[devId].deviceHaloParticles));
+    }
+
+    // reduce result
+    for (int devId = 0; devId < GPU_N; ++devId) {
+        for (unsigned long i = 0; i < this->particles.size(); ++i) {
+            if (this->layout[devId].resultParticles[i].modified) {
+                this->particles[i].x = this->layout[devId].resultParticles[i].x;
+                this->particles[i].v = this->layout[devId].resultParticles[i].v;
+            }
+        }
+    }
 }
 
 void LinkedCellsImpl::iteratePairs() {
 
-    int NInner = this->inner.size();
-    int NPairOffsets = this->pairOffsets.size();
+    for (int devId = 0; devId < GPU_N; ++devId) {
+        CudaSafeCall(cudaSetDevice(devId));
 
-    dim3 blocks(NInner, NPairOffsets);
-    dim3 threadsPerBlock(MAXCELLPARTICLE, MAXCELLPARTICLE);
+        int NInner = this->layout[devId].size;
+        int NPairOffsets = this->pairOffsets.size();
 
-    calculateKernel << < blocks, threadsPerBlock >> >(this->deviceCells, this->deviceParticles, this->deviceHaloParticles,
-            this->deviceInner, this->devicePairOffsets);
-    CudaCheckError();
+        dim3 blocks(NInner, NPairOffsets);
+        dim3 threadsPerBlock(MAXCELLPARTICLE, MAXCELLPARTICLE);
+
+        calculateKernel << < blocks, threadsPerBlock, 0, this->layout[devId].stream >> >
+                                                         (this->layout[devId].deviceCells, this->layout[devId].deviceParticles, this->layout[devId].deviceHaloParticles,
+                                                                 this->layout[devId].deviceInner, this->layout[devId].devicePairOffsets);
+        CudaCheckError();
+    }
 }
 
 void LinkedCellsImpl::iterate() {
-    int N = this->particles.size();
 
-    iterateKernel << < (N + 511) / 512, 512 >> > (N, this->deviceParticles);
-    CudaCheckError();
+    for (int devId = 0; devId < GPU_N; ++devId) {
+        CudaSafeCall(cudaSetDevice(devId));
+
+        int NInner = this->layout[devId].size;
+        iterateKernel << < NInner, MAXCELLPARTICLE, 0, this->layout[devId].stream >> >
+                                                       (this->layout[devId].deviceCells, this->layout[devId].deviceParticles, this->layout[devId].deviceInner);
+        CudaCheckError();
+    }
+
 }
 
 
 void LinkedCellsImpl::preStep() {
-    int N = this->particles.size();
+    for (int devId = 0; devId < GPU_N; ++devId) {
+        CudaSafeCall(cudaSetDevice(devId));
 
-    preKernel << < (N + 511) / 512, 512 >> > (N, this->deviceParticles);
-    CudaCheckError();
+        int NInner = this->layout[devId].size;
+        preKernel << < NInner, MAXCELLPARTICLE, 0, this->layout[devId].stream >> >
+                                                   (this->layout[devId].deviceCells, this->layout[devId].deviceParticles, this->layout[devId].deviceInner);
+        CudaCheckError();
+    }
 }
 
 void LinkedCellsImpl::postStep() {
+    for (int devId = 0; devId < GPU_N; ++devId) {
+        CudaSafeCall(cudaSetDevice(devId));
 
-    int N = this->particles.size();
-
-    postKernel << < (N + 511) / 512, 512 >> > (N, this->deviceParticles);
-    CudaCheckError();
+        int NInner = this->layout[devId].size;
+        postKernel << < NInner, MAXCELLPARTICLE, 0, this->layout[devId].stream >> >
+                                                    (this->layout[devId].deviceCells, this->layout[devId].deviceParticles, this->layout[devId].deviceInner);
+        CudaCheckError();
+    }
 }
 
 LinkedCellsImpl::LinkedCellsImpl(Domain &domain, Vector cellSizeTarget, std::vector<Particle> &particles) : LinkedCells(
         domain, cellSizeTarget, particles) {
 
+    // Get number of available devices
+    CudaSafeCall(cudaGetDeviceCount(&GPU_N));
+    GPU_N -= GPU_N % 2;
+    printf("CUDA-capable device count: %i\n", GPU_N);
+
+    this->layout = new GPULayout[GPU_N];
+
     int N = this->particles.size();
-    // Copy particles to device
-    CudaSafeCall(cudaMalloc((void **) &this->deviceParticles, sizeof(Particle) * N));
-    CudaSafeCall(
-            cudaMemcpy(this->deviceParticles, this->particles.data(), sizeof(Particle) * N, cudaMemcpyHostToDevice));
 
-    N = this->inner.size();
-    // Copy inner cell indices to device
-    CudaSafeCall(cudaMalloc((void **) &this->deviceInner, sizeof(int) * N));
-    CudaSafeCall(cudaMemcpy(this->deviceInner, this->inner.data(), sizeof(int) * N, cudaMemcpyHostToDevice));
+    for (int devId = 0; devId < GPU_N; ++devId) {
+        CudaSafeCall(cudaSetDevice(devId));
+        CudaSafeCall(cudaStreamCreate(&this->layout[devId].stream));
+        // Copy particles to device
+        CudaSafeCall(cudaMalloc((void **) &this->layout[devId].deviceParticles, sizeof(Particle) * N));
+        CudaSafeCall(
+                cudaMemcpy(this->layout[devId].deviceParticles, this->particles.data(), sizeof(Particle) * N,
+                           cudaMemcpyHostToDevice));
+        CudaSafeCall(cudaMallocHost((void **) &this->layout[devId].resultParticles, sizeof(Particle) * N));
 
-    N = this->pairOffsets.size();
-    // Copy pairOffsets to device
-    CudaSafeCall(cudaMalloc((void **) &this->devicePairOffsets, sizeof(int) * N));
-    CudaSafeCall(cudaMemcpy(this->devicePairOffsets, this->pairOffsets.data(), sizeof(int) * N, cudaMemcpyHostToDevice));
+        N = this->inner.size();
+        // Copy inner cell indices to device
+        CudaSafeCall(cudaMalloc((void **) &this->layout[devId].deviceInner, sizeof(int) * N));
+        CudaSafeCall(cudaMemcpy(this->layout[devId].deviceInner, this->inner.data(), sizeof(int) * N,
+                                cudaMemcpyHostToDevice));
+        this->layout[devId].size = N;
+
+        N = this->pairOffsets.size();
+        // Copy pairOffsets to device
+        CudaSafeCall(cudaMalloc((void **) &this->layout[devId].devicePairOffsets, sizeof(int) * N));
+        CudaSafeCall(
+                cudaMemcpy(this->layout[devId].devicePairOffsets, this->pairOffsets.data(), sizeof(int) * N,
+                           cudaMemcpyHostToDevice));
 
 
-    CudaSafeCall(cudaMalloc((void **) &this->deviceCells, sizeof(Cell) * this->cells.size()));
-
+        CudaSafeCall(cudaMalloc((void **) &this->layout[devId].deviceCells, sizeof(Cell) * this->cells.size()));
+    }
 }
 
 LinkedCellsImpl::~LinkedCellsImpl() {
-    CudaSafeCall(cudaFree(this->deviceParticles));
-    CudaSafeCall(cudaFree(this->deviceInner));
-    CudaSafeCall(cudaFree(this->devicePairOffsets));
-    CudaSafeCall(cudaFree(this->deviceCells));
+    for (int devId = 0; devId < GPU_N; ++devId) {
+        CudaSafeCall(cudaSetDevice(devId));
+        CudaSafeCall(cudaFree(this->layout[devId].deviceParticles));
+        CudaSafeCall(cudaFree(this->layout[devId].resultParticles));
+        CudaSafeCall(cudaFree(this->layout[devId].deviceInner));
+        CudaSafeCall(cudaFree(this->layout[devId].devicePairOffsets));
+        CudaSafeCall(cudaFree(this->layout[devId].deviceCells));
+    }
+    free(this->layout);
+}
+
+void LinkedCellsImpl::updateDecomp() {
+    // Assert square boundary
+    // assert(this->numCells.x % 2 == 0 && this->numCells.y == this->numCells.x && this->numCells.z == this->numCells.x);
+
+// TODO Set inner cells for each device
+    int partSize = ceil(1.0 * this->inner.size() / GPU_N);
+    int offset = 0;
+    int remaining = this->inner.size();
+
+    for (int devId = 0; devId < GPU_N; ++devId) {
+        int N = partSize < remaining ? partSize : remaining;
+        CudaSafeCall(cudaSetDevice(devId));
+        // Copy inner cell indices to device
+        CudaSafeCall(cudaMalloc((void **) &this->layout[devId].deviceInner, sizeof(int) * N));
+        CudaSafeCall(cudaMemcpy(&this->layout[devId].deviceInner[offset], this->inner.data(), sizeof(int) * N,
+                                cudaMemcpyHostToDevice));
+        this->layout[devId].size = N;
+        offset += N;
+        remaining -= N;
+    }
+    assert(remaining == 0);
 }

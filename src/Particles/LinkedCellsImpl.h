@@ -2,13 +2,17 @@
 
 #include "LinkedCells.h"
 
+struct GPULayout;
+
 class LinkedCellsImpl : public LinkedCells {
 
-    Particle *deviceParticles = nullptr;
-    Particle *deviceHaloParticles = nullptr;
-    int *deviceInner = nullptr;
-    int *devicePairOffsets = nullptr;
-    Cell *deviceCells = nullptr;
+    GPULayout *layout = nullptr;
+
+    int GPU_N = 0;
+
+protected:
+
+    void updateDecomp() override;
 
 public:
     explicit LinkedCellsImpl(Domain &domain, Vector cellSizeTarget, std::vector<Particle> &particles);

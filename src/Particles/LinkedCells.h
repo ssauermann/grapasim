@@ -77,6 +77,8 @@ protected:
         return idx;
     }
 
+    virtual void updateDecomp() = 0;
+
 
 public:
 
@@ -130,7 +132,7 @@ public:
 
     }
 
-    const std::vector<int> calculatePairs() {
+    std::vector<int> calculatePairs() {
         // Precompute the cell offsets in 1d
         auto pairs = std::vector<int>();
         for (int i = -1; i <= 1; ++i) {
