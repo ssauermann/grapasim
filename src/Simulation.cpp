@@ -18,8 +18,8 @@ void Simulation::run() {
 
     bool includeHaloInOutput = true;
 
-    Domain domain = {.x = std::make_pair(-0.04, 0.04), .y = std::make_pair(0, 0.2), .z = std::make_pair(-1, 1)};
-    Vector cellSizeTarget = {0.001, 0.001, 1};
+    Domain domain = {.x = std::make_pair(-0.064, 0.064), .y = std::make_pair(0, 0.256), .z = std::make_pair(-0.5, 0.5)};
+    Vector cellSizeTarget = {0.0005, 0.001, 1};
     std::vector<Particle> particles;
 
     SphereGenerator generator(30);

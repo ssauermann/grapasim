@@ -26,7 +26,7 @@ struct GPULayout {
     int *deviceInner = nullptr;
     int *devicePairOffsets = nullptr;
     Cell *deviceCells = nullptr;
-    cudaStream_t stream;
+    cudaStream_t stream = 0;
     int size = 0;
     Particle *resultParticles = nullptr;
 };
@@ -128,6 +128,7 @@ void LinkedCellsImpl::finalizeComputation() {
     for (int devId = 0; devId < GPU_N; ++devId) {
         CudaSafeCall(cudaSetDevice(devId));
         int N = this->particles.size();
+
         // Copy particles from device to host to allow output to access the data
         CudaSafeCall(cudaMemcpyAsync(
                 //this->particles.data(),
@@ -229,16 +230,18 @@ LinkedCellsImpl::LinkedCellsImpl(Domain &domain, Vector cellSizeTarget, std::vec
         this->decomp = new Hilbert3D(inner, numInner);
     }
 
-    int N = this->particles.size();
 
     for (int devId = 0; devId < GPU_N; ++devId) {
         CudaSafeCall(cudaSetDevice(devId));
         CudaSafeCall(cudaStreamCreate(&this->layout[devId].stream));
+
         // Copy particles to device
+        int N = this->particles.size();
         CudaSafeCall(cudaMalloc((void **) &this->layout[devId].deviceParticles, sizeof(Particle) * N));
         CudaSafeCall(
                 cudaMemcpy(this->layout[devId].deviceParticles, this->particles.data(), sizeof(Particle) * N,
                            cudaMemcpyHostToDevice));
+
         CudaSafeCall(cudaMallocHost((void **) &this->layout[devId].resultParticles, sizeof(Particle) * N));
 
         N = this->inner.size();
@@ -288,17 +291,18 @@ void LinkedCellsImpl::updateDecomp() {
         CudaSafeCall(cudaSetDevice(devId));
 
         int upperCellIndex = offset;
-        for(int particleCount = 0; particleCount < partSize && upperCellIndex < ordered.size() - 1; ++upperCellIndex){
+        int particleCount = 0;
+        while(particleCount < partSize && upperCellIndex < ordered.size()){
 
             auto cellIdx = ordered.at(upperCellIndex);
             particleCount += cells.at(cellIdx).size;
-
+            upperCellIndex++;
         }
         int N = upperCellIndex-offset;
 
         // Copy inner cell indices to device
         CudaSafeCall(cudaMalloc((void **) &this->layout[devId].deviceInner, sizeof(int) * N));
-        CudaSafeCall(cudaMemcpyAsync(&this->layout[devId].deviceInner[offset], ordered.data(), sizeof(int) * N,
+        CudaSafeCall(cudaMemcpyAsync(this->layout[devId].deviceInner, &ordered.data()[offset], sizeof(int) * N,
                                      cudaMemcpyHostToDevice, this->layout[devId].stream));
         this->layout[devId].size = N;
 
@@ -315,7 +319,7 @@ void LinkedCellsImpl::updateDecomp() {
         CudaSafeCall(cudaSetDevice(devId));
         // Copy inner cell indices to device
         CudaSafeCall(cudaMalloc((void **) &this->layout[devId].deviceInner, sizeof(int) * N));
-        CudaSafeCall(cudaMemcpyAsync(&this->layout[devId].deviceInner[offset], this->inner.data(), sizeof(int) * N,
+        CudaSafeCall(cudaMemcpyAsync(this->layout[devId].deviceInner, &this->inner.data()[offset], sizeof(int) * N,
                                 cudaMemcpyHostToDevice, this->layout[devId].stream));
         this->layout[devId].size = N;
         offset += N;
@@ -326,4 +330,5 @@ void LinkedCellsImpl::updateDecomp() {
     }*/
     assert(remaining == 0);
 #endif
+
 }

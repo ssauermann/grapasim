@@ -81,7 +81,6 @@ void LinkedCells::updateContainer() {
             }
             // TODO Diagonal mirroring might be necessary?
         }
-        updateDecomp();
     }
 
     // Re-sort halo particles into cells
@@ -91,6 +90,7 @@ void LinkedCells::updateContainer() {
         cells.at(idx).pushBack(-pIdx-1);
     }
 
+    updateDecomp();
 }
 
 void LinkedCells::output(const std::function<void(Particle &)> &function, bool includeHalo) {
