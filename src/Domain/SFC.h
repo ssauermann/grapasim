@@ -4,6 +4,7 @@
 #include <IntVector.h>
 #include <cassert>
 #include <cmath>
+#include <iostream>
 
 class SFC {
     std::vector<int> &cells;
@@ -21,27 +22,27 @@ protected:
         order.push_back(cells.at(idx));
     }
 
-    void up() {
+    void _up() {
         activeIndex.y++;
     }
 
-    void down() {
+    void _down() {
         activeIndex.y--;
     }
 
-    void left() {
+    void _left() {
         activeIndex.x--;
     }
 
-    void right() {
+    void _right() {
         activeIndex.x++;
     }
 
-    void front() {
+    void _front() {
         activeIndex.z--;
     }
 
-    void back() {
+    void _back() {
         activeIndex.z++;
     }
 
