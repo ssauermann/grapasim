@@ -1,6 +1,7 @@
 #include <fstream>
 #include "VTKWriter.h"
 #include <cassert>
+#include "Constants.h"
 
 
 #include "VTK/vtk-unstructured.h"
@@ -32,14 +33,17 @@ void VTKWriter::writeBegin(unsigned long iteration, int numParticles) {
 }
 
 void VTKWriter::writeFinalize() {
+#ifdef VTK
     std::ofstream file(fileName);
     VTKFile(file, *this->vtkFile); //actually writes the file
+#endif
 }
 
 void VTKWriter::plotParticle(const Particle &particle) {
 #ifdef VTK
     PointData::DataArray_sequence &pointDataArraySequence = this->vtkFile->UnstructuredGrid()->Piece().PointData().DataArray();
     PointData::DataArray_iterator data_iterator = pointDataArraySequence.begin();
+#ifndef SMALLVTK
     // id
     data_iterator->push_back(particle.id);
     data_iterator++;
@@ -49,13 +53,6 @@ void VTKWriter::plotParticle(const Particle &particle) {
     // mpi-node rank
     data_iterator->push_back(this->rank);
     data_iterator++;
-    // forces
-    data_iterator->push_back(particle.F.x);
-    data_iterator->push_back(particle.F.y);
-    data_iterator->push_back(particle.F.z);
-
-
-    data_iterator++;
     // velocities
     data_iterator->push_back(particle.v.x);
     data_iterator->push_back(particle.v.y);
@@ -64,6 +61,7 @@ void VTKWriter::plotParticle(const Particle &particle) {
     data_iterator++;
     // particle diameter
     data_iterator->push_back(particle.radius * 2);
+#endif
 
 
     // Coordinates
@@ -84,19 +82,18 @@ void VTKWriter::initializeVTKFile() {
     // The iterator over PointData traverses the DataArrays just in the order
     // in which we add them here.
     PointData pointData;
+#ifndef SMALLVTK
     DataArray_t particleId(type::Float32, "id", 1);
     pointData.DataArray().push_back(particleId);
     DataArray_t particleType(type::Int32, "type", 1);
     pointData.DataArray().push_back(particleType);
-
     DataArray_t node_rank(type::Int32, "node-rank", 1);
     pointData.DataArray().push_back(node_rank);
-    DataArray_t forces(type::Float32, "forces", 3);
-    pointData.DataArray().push_back(forces);
     DataArray_t velocities(type::Float32, "velocities", 3);
     pointData.DataArray().push_back(velocities);
     DataArray_t diameter(type::Float32, "diameter", 1);
     pointData.DataArray().push_back(diameter);
+#endif
 
     CellData cellData; // we don't have cell data => leave it empty
 
@@ -120,6 +117,7 @@ void VTKWriter::initializeVTKFile() {
 void VTKWriter::initializeParallelVTKFile(const std::vector<std::string> &fileNames) {
 #ifdef VTK
     PPointData p_pointData;
+#ifndef SMALLVTK
     DataArray_t p_particleId(type::Float32, "id", 1);
     p_pointData.PDataArray().push_back(p_particleId);
     DataArray_t particleType(type::Int32, "type", 1);
@@ -127,12 +125,11 @@ void VTKWriter::initializeParallelVTKFile(const std::vector<std::string> &fileNa
 
     DataArray_t p_node_rank(type::Int32, "node-rank", 1);
     p_pointData.PDataArray().push_back(p_node_rank);
-    DataArray_t p_forces(type::Float32, "forces", 3);
-    p_pointData.PDataArray().push_back(p_forces);
     DataArray_t p_velocities(type::Float32, "velocities", 3);
     p_pointData.PDataArray().push_back(p_velocities);
     DataArray_t diameter(type::Float32, "radius", 1);
     p_pointData.PDataArray().push_back(diameter);
+#endif
 
 
     PCellData p_cellData; // we don't have cell data => leave it empty

@@ -214,7 +214,7 @@ LinkedCellsImpl::LinkedCellsImpl(Domain &domain, Vector cellSizeTarget, std::vec
 
     // Get number of available devices
     CudaSafeCall(cudaGetDeviceCount(&GPU_N));
-    GPU_N -= GPU_N % 2;
+    //GPU_N -= GPU_N % 2;
     printf("CUDA-capable device count: %i\n", GPU_N);
 
     this->layout = new GPULayout[GPU_N];

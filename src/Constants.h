@@ -20,9 +20,9 @@
 
 // #define SHEAR_FORCES // Uncomment to enable shear forces
 
-// #define DOREVERSE
-
 #define DYNDD
+
+#define SMALLVTK
 
 typedef float PRECISION;
 

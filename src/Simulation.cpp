@@ -1,20 +1,18 @@
 #include <vector>
 #include <iostream>
-#include <cmath>
 #include <Output/VTKWriter.h>
 #include <Generators/SphereGenerator.h>
 #include <Generators/MaxwellBoltzmann.h>
 #include "Simulation.h"
-#include "Integration/Leapfrog.h"
-#include "Particles/Particle.h"
 #include "Particles/LinkedCellsImpl.h"
-#include "Forces/SpringForce.h"
-#include "Output/XYZWriter.h"
+#include <chrono>
 
+using Clock=std::chrono::high_resolution_clock;
 void Simulation::run() {
 
     unsigned int simSteps = 100000;
     unsigned int writeFrequency = 100;
+    unsigned int timeFrequency = 10;
 
     bool includeHaloInOutput = true;
 
@@ -58,11 +56,15 @@ void Simulation::run() {
     particleContainer.finalizeComputation();
     std::cout << "Init Fin fin\n";
 
+#ifdef VTK
+    std::cout << "Writing initial output\n";
     output.writeBegin(0, particleContainer.particleCount(true));
     particleContainer.output(outputW, includeHaloInOutput);
     output.writeFinalize();
+#endif
 
 
+    auto t1 = Clock::now();
     for (unsigned int step = 1; step <= simSteps; ++step) {
         std::cout << "Step: " << step << "\n";
 
@@ -77,19 +79,21 @@ void Simulation::run() {
         particleContainer.postStep();
         particleContainer.finalizeComputation();
 
-
-#ifdef DOREVERSE
-        if ( step == simSteps / 2) {
-            std::cout << "Inverse now" << std::endl;
-            integrator.reverse();
+        if(step % timeFrequency == 0 || step == simSteps){
+            auto t2 = Clock::now();
+            std::cout << "Time for " << step << " steps: "
+                      << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count()
+                      << " nanoseconds" << std::endl;
         }
-#endif
 
+#ifdef VTK
         if (step % writeFrequency == 0 || step == simSteps) {
+            std::cout << "Writing output...\n";
             output.writeBegin(step, particleContainer.particleCount(true));
             particleContainer.output(outputW, includeHaloInOutput);
             output.writeFinalize();
         }
+#endif
     }
 
     std::cout << "Finished simulation" << std::endl;
