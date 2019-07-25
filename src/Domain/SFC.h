@@ -17,7 +17,7 @@ protected:
     int targetDepth = 0;
 
     void execute() {
-        std::cout << activeIndex.x << ", " << activeIndex.y << ", " << activeIndex.z << "\n";
+        // std::cout << activeIndex.x << ", " << activeIndex.y << ", " << activeIndex.z << "\n";
         auto idx = activeIndex.x * numCells.y * numCells.z + activeIndex.y * numCells.z + activeIndex.z;
         order.push_back(cells.at(idx));
     }

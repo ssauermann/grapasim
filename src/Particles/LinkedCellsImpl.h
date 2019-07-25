@@ -1,11 +1,13 @@
 #pragma once
 
+#include <Domain/SFC.h>
 #include "LinkedCells.h"
 
 struct GPULayout;
 
 class LinkedCellsImpl : public LinkedCells {
 
+    SFC *decomp= nullptr;
     GPULayout *layout = nullptr;
 
     int GPU_N = 0;

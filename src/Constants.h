@@ -22,5 +22,7 @@
 
 // #define DOREVERSE
 
+#define DYNDD
+
 typedef float PRECISION;
 

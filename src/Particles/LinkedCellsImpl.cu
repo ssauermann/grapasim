@@ -2,6 +2,8 @@
 
 #include "Integration/Leapfrog.h"
 #include <cmath>
+#include <Domain/Hilbert.h>
+#include <Domain/Hilbert3D.h>
 
 /*
 __device__ void calculateKernelInner(int NA, int NB, Particle *cellA, Particle *cellB) {
@@ -216,6 +218,17 @@ LinkedCellsImpl::LinkedCellsImpl(Domain &domain, Vector cellSizeTarget, std::vec
 
     this->layout = new GPULayout[GPU_N];
 
+    IntVector numInner = numCells;
+    numInner.x -= 2;
+    numInner.y -= 2;
+    numInner.z -= 2;
+
+    if(numInner.z == 1){
+        this->decomp = new Hilbert(inner, numInner);
+    } else {
+        this->decomp = new Hilbert3D(inner, numInner);
+    }
+
     int N = this->particles.size();
 
     for (int devId = 0; devId < GPU_N; ++devId) {
@@ -264,6 +277,35 @@ void LinkedCellsImpl::updateDecomp() {
     // assert(this->numCells.x % 2 == 0 && this->numCells.y == this->numCells.x && this->numCells.z == this->numCells.x);
 
 // TODO Set inner cells for each device
+#ifdef DYNDD
+
+    auto ordered = this->decomp->ordered();
+    int partSize = ceil(1.0 * this->particles.size() / GPU_N);
+
+    int offset = 0;
+
+    for (int devId = 0; devId < GPU_N; ++devId) {
+        CudaSafeCall(cudaSetDevice(devId));
+
+        int upperCellIndex = offset;
+        for(int particleCount = 0; particleCount < partSize && upperCellIndex < ordered.size() - 1; ++upperCellIndex){
+
+            auto cellIdx = ordered.at(upperCellIndex);
+            particleCount += cells.at(cellIdx).size;
+
+        }
+        int N = upperCellIndex-offset;
+
+        // Copy inner cell indices to device
+        CudaSafeCall(cudaMalloc((void **) &this->layout[devId].deviceInner, sizeof(int) * N));
+        CudaSafeCall(cudaMemcpyAsync(&this->layout[devId].deviceInner[offset], ordered.data(), sizeof(int) * N,
+                                     cudaMemcpyHostToDevice, this->layout[devId].stream));
+        this->layout[devId].size = N;
+
+        offset = upperCellIndex;
+    }
+
+#else
     int partSize = ceil(1.0 * this->inner.size() / GPU_N);
     int offset = 0;
     int remaining = this->inner.size();
@@ -273,11 +315,15 @@ void LinkedCellsImpl::updateDecomp() {
         CudaSafeCall(cudaSetDevice(devId));
         // Copy inner cell indices to device
         CudaSafeCall(cudaMalloc((void **) &this->layout[devId].deviceInner, sizeof(int) * N));
-        CudaSafeCall(cudaMemcpy(&this->layout[devId].deviceInner[offset], this->inner.data(), sizeof(int) * N,
-                                cudaMemcpyHostToDevice));
+        CudaSafeCall(cudaMemcpyAsync(&this->layout[devId].deviceInner[offset], this->inner.data(), sizeof(int) * N,
+                                cudaMemcpyHostToDevice, this->layout[devId].stream));
         this->layout[devId].size = N;
         offset += N;
         remaining -= N;
     }
+    /*for (int devId = 0; devId < GPU_N; ++devId) {
+        cudaStreamSynchronize(this->layout[devId].stream);
+    }*/
     assert(remaining == 0);
+#endif
 }

@@ -60,26 +60,28 @@ void LinkedCells::updateContainer() {
                 copy.v.y *= -1;
                 this->haloParticles.push_back(copy);
             }
-/*
-            // if is boundary in +z
-            if (p->x.z > domain.z.second - cellSize.z + 1e-5) {
-                Particle copy = *p;
-                copy.type = -1;
-                copy.x.z += 2 * (domain.z.second - p->x.z);
-                copy.v.z *= -1;
-                this->haloParticles.push_back(copy);
+
+            if(this->numCells.z > 3) {
+                // if is boundary in +z
+                if (p->x.z > domain.z.second - cellSize.z + 1e-5) {
+                    Particle copy = *p;
+                    copy.type = -1;
+                    copy.x.z += 2 * (domain.z.second - p->x.z);
+                    copy.v.z *= -1;
+                    this->haloParticles.push_back(copy);
+                }
+                // if is boundary in -z
+                if (p->x.z < domain.z.first + cellSize.z - 1e-5) {
+                    Particle copy = *p;
+                    copy.type = -1;
+                    copy.x.z -= 2 * (p->x.z - domain.z.first);
+                    copy.v.z *= -1;
+                    this->haloParticles.push_back(copy);
+                }
             }
-            // if is boundary in -z
-            if (p->x.z < domain.z.first + cellSize.z - 1e-5) {
-                Particle copy = *p;
-                copy.type = -1;
-                copy.x.z -= 2 * (p->x.z - domain.z.first);
-                copy.v.z *= -1;
-                this->haloParticles.push_back(copy);
-            }
-*/
             // TODO Diagonal mirroring might be necessary?
         }
+        updateDecomp();
     }
 
     // Re-sort halo particles into cells
