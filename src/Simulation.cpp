@@ -10,9 +10,10 @@
 using Clock=std::chrono::high_resolution_clock;
 void Simulation::run() {
 
-    unsigned int simSteps = 100000;
+    unsigned int simSteps = 200;
     unsigned int writeFrequency = 100;
     unsigned int timeFrequency = 10;
+    unsigned int decompFrequency = 100;
 
     bool includeHaloInOutput = true;
 
@@ -46,6 +47,7 @@ void Simulation::run() {
     std::cout << "Simulating " << particles.size() << " particles for " << simSteps << " time-steps\n";
     //Calculate starting forces
     particleContainer.updateContainer();
+    particleContainer.updateDecomp();
     std::cout << "Init Update fin\n";
     particleContainer.prepareComputation();
     std::cout << "Init Prep fin\n";
@@ -69,6 +71,9 @@ void Simulation::run() {
         std::cout << "Step: " << step << "\n";
 
         particleContainer.updateContainer();
+        if(step % decompFrequency == 0){
+            particleContainer.updateDecomp();
+        }
         particleContainer.prepareComputation();
 
         particleContainer.preStep();

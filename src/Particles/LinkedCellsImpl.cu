@@ -5,6 +5,13 @@
 #include <Domain/Hilbert.h>
 #include <Domain/Hilbert3D.h>
 
+#include <thrust/host_vector.h>
+#include <thrust/device_vector.h>
+#include <thrust/generate.h>
+#include <thrust/reduce.h>
+#include <thrust/functional.h>
+
+
 /*
 __device__ void calculateKernelInner(int NA, int NB, Particle *cellA, Particle *cellB) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -105,6 +112,7 @@ __global__ void postKernel(Cell *cells, Particle *particles, int *inner) {
 }
 
 void LinkedCellsImpl::prepareComputation() {
+#pragma omp parallel for
     for (int devId = 0; devId < GPU_N; ++devId) {
         CudaSafeCall(cudaSetDevice(devId));
 
@@ -125,6 +133,7 @@ void LinkedCellsImpl::prepareComputation() {
 
 void LinkedCellsImpl::finalizeComputation() {
 
+#pragma omp parallel for
     for (int devId = 0; devId < GPU_N; ++devId) {
         CudaSafeCall(cudaSetDevice(devId));
         int N = this->particles.size();
@@ -137,12 +146,14 @@ void LinkedCellsImpl::finalizeComputation() {
                 sizeof(Particle) * N,
                 cudaMemcpyDeviceToHost, this->layout[devId].stream));
 
-        //Wait for all operations to finish
-        cudaStreamSynchronize(this->layout[devId].stream);
-
-        // Clear halos again
         CudaSafeCall(cudaFree(this->layout[devId].deviceHaloParticles));
     }
+
+    for (int devId = 0; devId < GPU_N; ++devId) {
+        CudaSafeCall(cudaSetDevice(devId));
+        CudaSafeCall(cudaDeviceSynchronize());
+    }
+
 
     // reduce result
     for (int devId = 0; devId < GPU_N; ++devId) {
@@ -157,6 +168,7 @@ void LinkedCellsImpl::finalizeComputation() {
 
 void LinkedCellsImpl::iteratePairs() {
 
+#pragma omp parallel for
     for (int devId = 0; devId < GPU_N; ++devId) {
         CudaSafeCall(cudaSetDevice(devId));
 
@@ -167,20 +179,21 @@ void LinkedCellsImpl::iteratePairs() {
         dim3 threadsPerBlock(MAXCELLPARTICLE, MAXCELLPARTICLE);
 
         calculateKernel << < blocks, threadsPerBlock, 0, this->layout[devId].stream >> >
-                                                         (this->layout[devId].deviceCells, this->layout[devId].deviceParticles, this->layout[devId].deviceHaloParticles,
-                                                                 this->layout[devId].deviceInner, this->layout[devId].devicePairOffsets);
+        (this->layout[devId].deviceCells, this->layout[devId].deviceParticles, this->layout[devId].deviceHaloParticles,
+                this->layout[devId].deviceInner, this->layout[devId].devicePairOffsets);
         CudaCheckError();
     }
 }
 
 void LinkedCellsImpl::iterate() {
 
+#pragma omp parallel for
     for (int devId = 0; devId < GPU_N; ++devId) {
         CudaSafeCall(cudaSetDevice(devId));
 
         int NInner = this->layout[devId].size;
         iterateKernel << < NInner, MAXCELLPARTICLE, 0, this->layout[devId].stream >> >
-                                                       (this->layout[devId].deviceCells, this->layout[devId].deviceParticles, this->layout[devId].deviceInner);
+        (this->layout[devId].deviceCells, this->layout[devId].deviceParticles, this->layout[devId].deviceInner);
         CudaCheckError();
     }
 
@@ -188,17 +201,19 @@ void LinkedCellsImpl::iterate() {
 
 
 void LinkedCellsImpl::preStep() {
+#pragma omp parallel for
     for (int devId = 0; devId < GPU_N; ++devId) {
         CudaSafeCall(cudaSetDevice(devId));
 
         int NInner = this->layout[devId].size;
         preKernel << < NInner, MAXCELLPARTICLE, 0, this->layout[devId].stream >> >
-                                                   (this->layout[devId].deviceCells, this->layout[devId].deviceParticles, this->layout[devId].deviceInner);
+        (this->layout[devId].deviceCells, this->layout[devId].deviceParticles, this->layout[devId].deviceInner);
         CudaCheckError();
     }
 }
 
 void LinkedCellsImpl::postStep() {
+#pragma omp parallel for
     for (int devId = 0; devId < GPU_N; ++devId) {
         CudaSafeCall(cudaSetDevice(devId));
 
@@ -233,6 +248,7 @@ LinkedCellsImpl::LinkedCellsImpl(Domain &domain, Vector cellSizeTarget, std::vec
     }
 
 
+#pragma omp parallel for
     for (int devId = 0; devId < GPU_N; ++devId) {
         std::cout << "Init stream " << devId << "\n";
         CudaSafeCall(cudaSetDevice(devId));
@@ -286,6 +302,8 @@ void LinkedCellsImpl::updateDecomp() {
     // Assert square boundary
     // assert(this->numCells.x % 2 == 0 && this->numCells.y == this->numCells.x && this->numCells.z == this->numCells.x);
 
+
+
 // TODO Set inner cells for each device
 #ifdef DYNDD
 
@@ -296,6 +314,8 @@ void LinkedCellsImpl::updateDecomp() {
 
     for (int devId = 0; devId < GPU_N; ++devId) {
         CudaSafeCall(cudaSetDevice(devId));
+
+        CudaSafeCall(cudaFree(this->layout[devId].deviceInner));
 
         int upperCellIndex = offset;
         int particleCount = 0;
@@ -337,5 +357,10 @@ void LinkedCellsImpl::updateDecomp() {
     }*/
     assert(remaining == 0);
 #endif
+
+}
+
+
+void LinkedCellsImpl::init() {
 
 }

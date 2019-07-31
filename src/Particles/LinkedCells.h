@@ -29,7 +29,7 @@ class LinkedCells {
 protected:
     std::vector<Particle> particles;
 
-    std::vector<Particle> haloParticles = std::vector<Particle>();
+    std::vector<Particle> haloParticles;
     Domain domain;
     Vector cellSize = {0, 0, 0};
     IntVector numCells = {0, 0, 0};
@@ -50,6 +50,8 @@ protected:
         *numberOfCells = numCellsTarget + 2; // Two halo cells in each dimension
         return cellSizeTarget + freeDomain / numCellsTarget;
     }
+
+    virtual void init() = 0;
 
     IntVector cellIndex(Particle &p) {
         IntVector idx = {0};
@@ -77,11 +79,9 @@ protected:
         return idx;
     }
 
-    virtual void updateDecomp() = 0;
 
 
 public:
-
 
     LinkedCells(const LinkedCells &) = delete;
 
@@ -146,6 +146,7 @@ public:
     }
 
     void updateContainer();
+    virtual void updateDecomp() = 0;
 
     void output(const std::function<void(Particle &)> &, bool includeHalo = false);
 

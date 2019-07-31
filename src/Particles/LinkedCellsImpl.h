@@ -14,13 +14,15 @@ class LinkedCellsImpl : public LinkedCells {
 
 protected:
 
-    void updateDecomp() override;
+
+    void init() override;
 
 public:
     explicit LinkedCellsImpl(Domain &domain, Vector cellSizeTarget, std::vector<Particle> &particles);
 
     ~LinkedCellsImpl();
 
+    void updateDecomp() override;
     void iteratePairs() override;
     void iterate() override;
     void preStep() override;

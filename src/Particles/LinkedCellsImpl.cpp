@@ -76,3 +76,7 @@ LinkedCellsImpl::~LinkedCellsImpl() = default;
 void LinkedCellsImpl::updateDecomp() {
     // No decomposition for CPU variant
 }
+
+void LinkedCellsImpl::init() {
+    //haloParticles = std::vector<Particle>;
+}

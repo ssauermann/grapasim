@@ -89,8 +89,6 @@ void LinkedCells::updateContainer() {
         auto idx = to1dIndex(cellIndex(p));
         cells.at(idx).pushBack(-pIdx-1);
     }
-
-    updateDecomp();
 }
 
 void LinkedCells::output(const std::function<void(Particle &)> &function, bool includeHalo) {
