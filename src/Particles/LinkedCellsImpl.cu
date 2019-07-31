@@ -5,12 +5,9 @@
 #include <Domain/Hilbert.h>
 #include <Domain/Hilbert3D.h>
 
-#include <thrust/host_vector.h>
-#include <thrust/device_vector.h>
-#include <thrust/generate.h>
-#include <thrust/reduce.h>
-#include <thrust/functional.h>
-
+#ifndef _OPENMP
+#error("Cuda code requires OpenMP")
+#endif
 
 /*
 __device__ void calculateKernelInner(int NA, int NB, Particle *cellA, Particle *cellB) {
@@ -33,7 +30,6 @@ struct GPULayout {
     int *deviceInner = nullptr;
     int *devicePairOffsets = nullptr;
     Cell *deviceCells = nullptr;
-    cudaStream_t stream = 0;
     int size = 0;
     Particle *resultParticles = nullptr;
 };
@@ -120,13 +116,11 @@ void LinkedCellsImpl::prepareComputation() {
         CudaSafeCall(cudaMalloc((void **) &this->layout[devId].deviceHaloParticles, sizeof(Particle) * N));
 
         // Copy cells to device
-        CudaSafeCall(cudaMemcpyAsync(this->layout[devId].deviceCells, this->cells.data(), sizeof(Cell) * N,
-                                     cudaMemcpyHostToDevice, this->layout[devId].stream));
+        CudaSafeCall(cudaMemcpy(this->layout[devId].deviceCells, this->cells.data(), sizeof(Cell) * N, cudaMemcpyHostToDevice));
         N = this->haloParticles.size();
         // Copy halo particles to device
-        CudaSafeCall(cudaMemcpyAsync(this->layout[devId].deviceHaloParticles, this->haloParticles.data(),
-                                     sizeof(Particle) * N,
-                                     cudaMemcpyHostToDevice, this->layout[devId].stream));
+        CudaSafeCall(cudaMemcpy(this->layout[devId].deviceHaloParticles, this->haloParticles.data(),
+                                     sizeof(Particle) * N, cudaMemcpyHostToDevice));
 
     }
 }
@@ -139,12 +133,12 @@ void LinkedCellsImpl::finalizeComputation() {
         int N = this->particles.size();
 
         // Copy particles from device to host to allow output to access the data
-        CudaSafeCall(cudaMemcpyAsync(
+        CudaSafeCall(cudaMemcpy(
                 //this->particles.data(),
                 this->layout[devId].resultParticles,
                 this->layout[devId].deviceParticles,
                 sizeof(Particle) * N,
-                cudaMemcpyDeviceToHost, this->layout[devId].stream));
+                cudaMemcpyDeviceToHost));
 
         CudaSafeCall(cudaFree(this->layout[devId].deviceHaloParticles));
     }
@@ -178,7 +172,7 @@ void LinkedCellsImpl::iteratePairs() {
         dim3 blocks(NInner, NPairOffsets);
         dim3 threadsPerBlock(MAXCELLPARTICLE, MAXCELLPARTICLE);
 
-        calculateKernel << < blocks, threadsPerBlock, 0, this->layout[devId].stream >> >
+        calculateKernel << < blocks, threadsPerBlock >> >
         (this->layout[devId].deviceCells, this->layout[devId].deviceParticles, this->layout[devId].deviceHaloParticles,
                 this->layout[devId].deviceInner, this->layout[devId].devicePairOffsets);
         CudaCheckError();
@@ -192,7 +186,7 @@ void LinkedCellsImpl::iterate() {
         CudaSafeCall(cudaSetDevice(devId));
 
         int NInner = this->layout[devId].size;
-        iterateKernel << < NInner, MAXCELLPARTICLE, 0, this->layout[devId].stream >> >
+        iterateKernel << < NInner, MAXCELLPARTICLE>> >
         (this->layout[devId].deviceCells, this->layout[devId].deviceParticles, this->layout[devId].deviceInner);
         CudaCheckError();
     }
@@ -206,7 +200,7 @@ void LinkedCellsImpl::preStep() {
         CudaSafeCall(cudaSetDevice(devId));
 
         int NInner = this->layout[devId].size;
-        preKernel << < NInner, MAXCELLPARTICLE, 0, this->layout[devId].stream >> >
+        preKernel << < NInner, MAXCELLPARTICLE >> >
         (this->layout[devId].deviceCells, this->layout[devId].deviceParticles, this->layout[devId].deviceInner);
         CudaCheckError();
     }
@@ -218,7 +212,7 @@ void LinkedCellsImpl::postStep() {
         CudaSafeCall(cudaSetDevice(devId));
 
         int NInner = this->layout[devId].size;
-        postKernel << < NInner, MAXCELLPARTICLE, 0, this->layout[devId].stream >> >
+        postKernel << < NInner, MAXCELLPARTICLE>> >
                                                     (this->layout[devId].deviceCells, this->layout[devId].deviceParticles, this->layout[devId].deviceInner);
         CudaCheckError();
     }
@@ -250,9 +244,8 @@ LinkedCellsImpl::LinkedCellsImpl(Domain &domain, Vector cellSizeTarget, std::vec
 
 #pragma omp parallel for
     for (int devId = 0; devId < GPU_N; ++devId) {
-        std::cout << "Init stream " << devId << "\n";
+        std::cout << "Init device " << devId << "\n";
         CudaSafeCall(cudaSetDevice(devId));
-        CudaSafeCall(cudaStreamCreate(&this->layout[devId].stream));
 
         // Copy particles to device
         std::cout << "Copy particles\n";
@@ -329,8 +322,8 @@ void LinkedCellsImpl::updateDecomp() {
 
         // Copy inner cell indices to device
         CudaSafeCall(cudaMalloc((void **) &this->layout[devId].deviceInner, sizeof(int) * N));
-        CudaSafeCall(cudaMemcpyAsync(this->layout[devId].deviceInner, &ordered.data()[offset], sizeof(int) * N,
-                                     cudaMemcpyHostToDevice, this->layout[devId].stream));
+        CudaSafeCall(cudaMemcpy(this->layout[devId].deviceInner, &ordered.data()[offset], sizeof(int) * N,
+                                     cudaMemcpyHostToDevice));
         this->layout[devId].size = N;
 
         offset = upperCellIndex;
@@ -345,9 +338,10 @@ void LinkedCellsImpl::updateDecomp() {
         int N = partSize < remaining ? partSize : remaining;
         CudaSafeCall(cudaSetDevice(devId));
         // Copy inner cell indices to device
+        CudaSafeCall(cudaFree(this->layout[devId].deviceInner));
         CudaSafeCall(cudaMalloc((void **) &this->layout[devId].deviceInner, sizeof(int) * N));
-        CudaSafeCall(cudaMemcpyAsync(this->layout[devId].deviceInner, &this->inner.data()[offset], sizeof(int) * N,
-                                cudaMemcpyHostToDevice, this->layout[devId].stream));
+        CudaSafeCall(cudaMemcpy(this->layout[devId].deviceInner, &this->inner.data()[offset], sizeof(int) * N,
+                                cudaMemcpyHostToDevice));
         this->layout[devId].size = N;
         offset += N;
         remaining -= N;

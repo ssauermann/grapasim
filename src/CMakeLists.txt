@@ -62,7 +62,13 @@ TARGET_LINK_LIBRARIES(GraPaSim
         ${CUDA_LIBRARIES}
         )
 
+                    message(STATUS "CXX_FLAGS ${CXX_FLAGS}")
+                    message(STATUS "CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS}")
 if(CUDA)
+	set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler \"${CMAKE_CXX_FLAGS}\"")
+if( "${CMAKE_BUILD_TYPE}" STREQUAL "Release")
+	set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler \"-O3 -DNDEBUG\"")
+endif()
     # set_target_properties(GraPaSim PROPERTIES LINKER_LANGUAGE CUDA) # This does not work for the same reason as the sample linking fails
     set_target_properties(GraPaSim PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
     target_compile_options(GraPaSim PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-std=c++11>)# -arch=sm_60 -gencode arch=compute_60,code=sm_60>)
